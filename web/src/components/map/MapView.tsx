@@ -1,8 +1,17 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
-import { AttributionControl, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl } from "maplibre-gl";
+import {
+  AttributionControl,
+  Map as MapLibreMap,
+  Marker,
+  NavigationControl,
+  ScaleControl,
+  setWorkerUrl,
+  type MapMouseEvent,
+} from "maplibre-gl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { readPoint } from "@/lib/api";
 import { APP_NAME, BASEMAP_STYLE_URL, LARGE_AREA_KM2 } from "@/lib/config";
 import { formatArea } from "@/lib/format";
 import { activeGroup, layerMode, mapLayersFor } from "@/lib/layers";
@@ -10,6 +19,7 @@ import { activeResult, useApp } from "@/lib/store";
 import type { BBox } from "@/lib/types";
 import { addAnchors, destroyMap } from "./anchors";
 import { LayersCard } from "./LayersCard";
+import { SpotCard, type SpotState } from "./SpotCard";
 import { SwipeHandle } from "./SwipeHandle";
 import { addAreaLayers, useAreaLayer } from "./useAreaLayer";
 import { useGibsLayer } from "./useGibsLayer";
@@ -148,6 +158,58 @@ export default function MapView() {
     );
   }, [map, flyTo]);
 
+  // ---- reading one spot: click the map while a result is on it
+  const [spot, setSpot] = useState<SpotState | null>(null);
+  const readableId = showResult && stored.result.status === "ok" && !state.drawing ? stored.result.id : null;
+  // A reading belongs to the result it was taken from; switching results hides it without an effect.
+  const visibleSpot = spot && spot.resultId === readableId ? spot : null;
+
+  useEffect(() => {
+    if (!map || !readableId) return;
+    const canvas = map.getCanvas();
+    canvas.style.cursor = "crosshair";
+    let controller: AbortController | null = null;
+    const onClick = (event: MapMouseEvent) => {
+      controller?.abort();
+      controller = new AbortController();
+      const { lng: lon, lat } = event.lngLat;
+      const at = { resultId: readableId, lon, lat };
+      setSpot({ status: "loading", ...at });
+      readPoint(readableId, lon, lat, controller.signal)
+        .then((reading) =>
+          setSpot(
+            reading
+              ? { status: "ready", ...at, reading }
+              : { status: "error", ...at, message: "Reading a spot needs the live service. This result is sample data." },
+          ),
+        )
+        .catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          const message = error instanceof Error ? error.message : "This spot could not be read.";
+          setSpot({ status: "error", ...at, message });
+        });
+    };
+    map.on("click", onClick);
+    return () => {
+      map.off("click", onClick);
+      controller?.abort();
+      canvas.style.cursor = "";
+    };
+  }, [map, readableId]);
+
+  const spotLon = visibleSpot?.lon;
+  const spotLat = visibleSpot?.lat;
+  useEffect(() => {
+    if (!map || spotLon === undefined || spotLat === undefined) return;
+    const element = document.createElement("div");
+    element.style.cssText =
+      "width:16px;height:16px;border-radius:9999px;background:#fff;border:3px solid #191919;box-shadow:0 1px 4px rgba(0,0,0,.35);pointer-events:none";
+    const marker = new Marker({ element }).setLngLat([spotLon, spotLat]).addTo(map);
+    return () => {
+      marker.remove();
+    };
+  }, [map, spotLon, spotLat]);
+
   const resultId = stored?.result.id;
   const setSwipe = useCallback(
     (swipe: number) => {
@@ -193,6 +255,12 @@ export default function MapView() {
             </>
           )}
         </p>
+      ) : null}
+
+      {visibleSpot ? (
+        <div className="pointer-events-none absolute inset-x-3 top-16 z-20 flex justify-center md:top-auto md:right-auto md:bottom-10 md:left-[444px] md:w-[420px] md:justify-start">
+          <SpotCard spot={visibleSpot} onClose={() => setSpot(null)} />
+        </div>
       ) : null}
 
       {/* Under the zoom buttons on a wide screen; in the corner on a phone, where there are none. */}

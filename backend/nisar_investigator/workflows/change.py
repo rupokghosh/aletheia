@@ -319,8 +319,15 @@ def _layers(
     central = analysis.thresholds_db["central"]
     limit = float(np.clip(np.ceil(2 * central), 4, 12))  # symmetric, with the central threshold at half scale
     filename = f"change_db{suffix}.png"
+    # Change below 1 dB is transparent and fades in up to the lenient threshold, so speckle does not read as
+    # change. Pixels at the noise floor on both dates cannot be judged and are left clear.
+    lenient = analysis.thresholds_db["lenient"]
+    with np.errstate(invalid="ignore"):
+        strength = np.clip((np.abs(analysis.change_db) - 1.0) / max(lenient - 1.0, 0.5), 0.0, 1.0)
+    strength = np.where(analysis.cannot_tell | ~np.isfinite(analysis.change_db), 0.0, strength)
     render.save_png(
-        provenance.artifact_path(result_id, filename), render.colorize(analysis.change_db, -limit, limit, "RdBu")
+        provenance.artifact_path(result_id, filename),
+        render.colorize(analysis.change_db, -limit, limit, "RdBu", alpha=strength),
     )
     out.append(
         Layer(

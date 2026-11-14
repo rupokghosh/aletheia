@@ -20,9 +20,21 @@ import { RunProgress } from "./RunProgress";
 import { TimeSeriesForm } from "./TimeSeriesForm";
 
 const ANALYSES: Array<{ id: WorkflowKind; label: string; about: string }> = [
-  { id: "change", label: "Change", about: "Compares two dates and maps what changed between them." },
-  { id: "timeseries", label: "Time series", about: "The radar brightness of the whole area on every date." },
-  { id: "motion", label: "Ground motion", about: "How far the ground moved towards or away from the satellite between two dates." },
+  {
+    id: "change",
+    label: "See what changed between two dates",
+    about: "A map of where the ground looks different to the radar, and how much area changed. Good for floods, water levels, logging and burns.",
+  },
+  {
+    id: "timeseries",
+    label: "See how it behaved over time",
+    about: "A chart of radar brightness on every date NISAR has here, with the radar picture for each date. Good for seasons, and for finding when something happened.",
+  },
+  {
+    id: "motion",
+    label: "See if the ground moved",
+    about: "A map of ground movement in centimetres between two passes 12 days apart. Good for earthquakes, volcanoes and fast sinking.",
+  },
 ];
 
 /** The place and its size on one line, with the ways to change it. */
@@ -122,7 +134,6 @@ export function AreaView({ bbox }: { bbox: BBox }) {
   const { coverage, analysisTab, run } = state;
   const views = useMemo(() => (coverage.data ? stackViews(coverage.data, bbox) : []), [coverage.data, bbox]);
   const ready = coverage.status === "ready" && coverage.data !== null;
-  const chosen = ANALYSES.find((item) => item.id === analysisTab);
   const choose = (tab: AnalysisTab) => dispatch({ type: "analysisTab", tab: tab === analysisTab ? "ask" : tab });
 
   return (
@@ -130,50 +141,57 @@ export function AreaView({ bbox }: { bbox: BBox }) {
       <AreaLine bbox={bbox} />
       <CoverageLine bbox={bbox} views={views} />
 
-      <div className="mt-6">
-        <AskForm bbox={bbox} />
-      </div>
-
-      <div className="mt-6">
-        <p className="text-sm text-ink-2">or run an analysis</p>
-        <div role="group" aria-label="Analyses" className="mt-2 flex flex-wrap gap-2">
-          {ANALYSES.map((item) => (
-            <Button
-              key={item.id}
-              size="sm"
-              variant={item.id === analysisTab ? "primary" : "secondary"}
-              aria-pressed={item.id === analysisTab}
-              onClick={() => choose(item.id)}
-            >
-              {item.label}
-            </Button>
-          ))}
-        </div>
-
-        {chosen ? (
-          <div className="mt-4">
-            <p className="mb-3 max-w-[65ch] text-sm leading-snug text-ink-2">{chosen.about}</p>
-            {!ready ? (
-              <Notice>Dates can be chosen once the search above has finished.</Notice>
-            ) : run.status === "running" ? (
-              <RunProgress description={run.description} startedAt={run.startedAt} demo={mode.demo} onCancel={actions.cancelRun} />
-            ) : (
-              <>
-                {run.status === "error" && run.error ? (
-                  <div className="mb-3">
-                    <Notice tone="error" title="The analysis did not complete">
-                      {run.error}
-                    </Notice>
+      <section className="mt-6" aria-label="Analyses">
+        <h2 className="text-[15px] tracking-normal text-ink">What do you want to know?</h2>
+        <ul className="mt-2.5 space-y-2">
+          {ANALYSES.map((item) => {
+            const open = item.id === analysisTab;
+            return (
+              <li key={item.id} className={`rounded-2xl border bg-panel ${open ? "border-line-strong" : "border-line"}`}>
+                <button
+                  type="button"
+                  className="press w-full rounded-2xl p-3.5 text-left hover:bg-raised"
+                  aria-expanded={open}
+                  onClick={() => choose(item.id)}
+                >
+                  <span className="block text-[15px] text-ink">{item.label}</span>
+                  <span className="mt-0.5 block text-sm leading-snug text-ink-2">{item.about}</span>
+                </button>
+                {open ? (
+                  <div className="border-t border-line p-3.5">
+                    {!ready ? (
+                      <Notice>Dates can be chosen once the search above has finished.</Notice>
+                    ) : run.status === "running" ? (
+                      <RunProgress description={run.description} startedAt={run.startedAt} demo={mode.demo} onCancel={actions.cancelRun} />
+                    ) : (
+                      <>
+                        {run.status === "error" && run.error ? (
+                          <div className="mb-3">
+                            <Notice tone="error" title="The analysis did not complete">
+                              {run.error}
+                            </Notice>
+                          </div>
+                        ) : null}
+                        {item.id === "change" ? <ChangeForm bbox={bbox} views={views} /> : null}
+                        {item.id === "timeseries" ? <TimeSeriesForm bbox={bbox} views={views} /> : null}
+                        {item.id === "motion" ? <MotionForm bbox={bbox} views={views} /> : null}
+                      </>
+                    )}
                   </div>
                 ) : null}
-                {chosen.id === "change" ? <ChangeForm bbox={bbox} views={views} /> : null}
-                {chosen.id === "timeseries" ? <TimeSeriesForm bbox={bbox} views={views} /> : null}
-                {chosen.id === "motion" ? <MotionForm bbox={bbox} views={views} /> : null}
-              </>
-            )}
-          </div>
-        ) : null}
-      </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      <section className="mt-6" aria-label="Ask a question">
+        <h2 className="text-[15px] tracking-normal text-ink">Or ask in your own words</h2>
+        <p className="mt-0.5 mb-2.5 max-w-[65ch] text-sm leading-snug text-ink-2">
+          The tool picks the analyses, runs them and writes up what it found, with its sources.
+        </p>
+        <AskForm bbox={bbox} />
+      </section>
     </>
   );
 }

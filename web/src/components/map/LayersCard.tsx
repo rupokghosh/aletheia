@@ -14,6 +14,8 @@ import { TimeScrubber } from "./TimeScrubber";
 interface LayerRowProps {
   title: string;
   detail?: string;
+  /** what the layer shows and what its colours mean, in a sentence or two */
+  description?: string | null;
   visible: boolean;
   locked?: boolean;
   opacity: number;
@@ -23,7 +25,7 @@ interface LayerRowProps {
   children?: ReactNode;
 }
 
-function LayerRow({ title, detail, visible, locked = false, opacity, legend, onVisible, onOpacity, children }: LayerRowProps) {
+function LayerRow({ title, detail, description, visible, locked = false, opacity, legend, onVisible, onOpacity, children }: LayerRowProps) {
   const id = useId();
   return (
     <li className="py-2">
@@ -42,7 +44,8 @@ function LayerRow({ title, detail, visible, locked = false, opacity, legend, onV
         </label>
       </div>
       {visible ? (
-        <div className="mt-2 space-y-2 pl-[26px]">
+        <div className="mt-2 space-y-2.5 pl-[26px]">
+          {description ? <p className="text-[13px] leading-snug text-ink-2">{description}</p> : null}
           {legend ? <LegendView legend={legend} /> : null}
           <div className="flex items-center gap-2.5">
             <label htmlFor={`${id}-opacity`} className="text-[13px] text-ink-3">
@@ -79,6 +82,26 @@ function ResultLayers({ stored, display }: { stored: StoredResult; display: Resu
   const resultId = result.id;
   const scrubIndex = Math.min(display.scrubIndex, group.length - 1);
   const dateOf = (layer: Layer) => (layer.date && !mentionsDate(layer.title, layer.date) ? formatDate(layer.date) : undefined);
+  const free = result.layers.filter((layer) => !(mode === "scrub" && group.includes(layer)));
+  const advanced = free.filter((layer) => layer.group === "advanced");
+  const row = (layer: Layer) => {
+    const setting = display.layers[layer.id] ?? { visible: false, opacity: 0.9 };
+    const inComparison = mode === "compare" && display.compare && group.includes(layer);
+    return (
+      <LayerRow
+        key={layer.id}
+        title={layer.title}
+        detail={dateOf(layer)}
+        description={layer.description}
+        visible={inComparison || setting.visible}
+        locked={inComparison}
+        opacity={setting.opacity}
+        legend={layer.legend}
+        onVisible={(visible) => dispatch({ type: "layer", resultId, layerId: layer.id, setting: { visible } })}
+        onOpacity={(opacity) => dispatch({ type: "layer", resultId, layerId: layer.id, setting: { opacity } })}
+      />
+    );
+  };
 
   return (
     <>
@@ -127,6 +150,7 @@ function ResultLayers({ stored, display }: { stored: StoredResult; display: Resu
             title={`${groupName(group, 0)}, ${plural(group.length, "date")}`}
             visible={display.groupVisible}
             opacity={display.groupOpacity}
+            description={group[scrubIndex].description}
             legend={group[scrubIndex].legend}
             onVisible={(groupVisible) => dispatch({ type: "display", resultId, display: { groupVisible } })}
             onOpacity={(groupOpacity) => dispatch({ type: "display", resultId, display: { groupOpacity } })}
@@ -139,26 +163,16 @@ function ResultLayers({ stored, display }: { stored: StoredResult; display: Resu
           </LayerRow>
         ) : null}
 
-        {result.layers
-          .filter((layer) => !(mode === "scrub" && group.includes(layer)))
-          .map((layer) => {
-            const setting = display.layers[layer.id] ?? { visible: false, opacity: 0.9 };
-            const inComparison = mode === "compare" && display.compare && group.includes(layer);
-            return (
-              <LayerRow
-                key={layer.id}
-                title={layer.title}
-                detail={dateOf(layer)}
-                visible={inComparison || setting.visible}
-                locked={inComparison}
-                opacity={setting.opacity}
-                legend={layer.legend}
-                onVisible={(visible) => dispatch({ type: "layer", resultId, layerId: layer.id, setting: { visible } })}
-                onOpacity={(opacity) => dispatch({ type: "layer", resultId, layerId: layer.id, setting: { opacity } })}
-              />
-            );
-          })}
+        {free.filter((layer) => layer.group !== "advanced").map(row)}
       </ul>
+      {advanced.length > 0 ? (
+        <details className="border-t border-line pt-1">
+          <summary className="w-max py-2 text-sm text-ink-2 underline underline-offset-2 hover:text-ink">
+            More layers ({advanced.length})
+          </summary>
+          <ul className="divide-y divide-line">{advanced.map(row)}</ul>
+        </details>
+      ) : null}
     </>
   );
 }
@@ -260,7 +274,7 @@ export function LayersCard({ stored, display, layers }: LayersCardProps) {
       className="popover pointer-events-auto flex max-h-full w-80 max-w-[calc(100vw-1.5rem)] origin-top-right flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-card"
     >
       <header className="flex shrink-0 items-center justify-between gap-2 py-2 pr-2 pl-4">
-        <h2 className="text-[15px] tracking-normal text-ink">Map layers</h2>
+        <h2 className="text-[15px] tracking-normal text-ink">On the map</h2>
         <div className="flex items-center gap-1.5">
           {stored && hasLayers ? <SourceBadge source={stored.source} /> : null}
           <button
@@ -275,6 +289,11 @@ export function LayersCard({ stored, display, layers }: LayersCardProps) {
         </div>
       </header>
       <div className="scroll-quiet min-h-0 overflow-y-auto px-4 pb-4">
+        {hasLayers ? (
+          <p className="mb-2 rounded-xl bg-raised px-3 py-2 text-[13px] leading-snug text-ink-2">
+            Click anywhere on the map to read what the radar measured at that spot.
+          </p>
+        ) : null}
         {hasLayers ? <ResultLayers stored={stored} display={display} /> : null}
         <div className={hasLayers ? "mt-1 border-t border-line pt-3" : ""}>
           <ReferenceImagery />

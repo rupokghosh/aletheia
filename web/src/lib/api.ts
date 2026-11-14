@@ -22,6 +22,7 @@ import {
   type InvestigationResult,
   type JsonObject,
   type MotionRequest,
+  type PointReading,
   type StepStatus,
   type TimeSeriesRequest,
   type WorkflowResult,
@@ -202,6 +203,16 @@ export async function runTimeSeries(
     const { demoTimeSeries } = await import("@/mocks");
     return demoTimeSeries(request, signal);
   });
+}
+
+/**
+ * What a stored result says at one spot. Null when there is no live API to ask (sample data), so the
+ * caller can say that reading a spot needs the live service.
+ */
+export async function readPoint(resultId: string, lon: number, lat: number, signal?: AbortSignal): Promise<PointReading | null> {
+  const path = `/api/results/${encodeURIComponent(resultId)}/point?lon=${lon.toFixed(6)}&lat=${lat.toFixed(6)}`;
+  const response = await liveFetch(path, { signal, headers: { Accept: "application/json" } });
+  return response ? ((await response.json()) as PointReading) : null;
 }
 
 export async function runMotion(request: MotionRequest, signal?: AbortSignal): Promise<Sourced<WorkflowResult>> {

@@ -48,7 +48,8 @@ def annotate(result: WorkflowResult) -> WorkflowResult:
             layer.description = (
                 "Red: the ground reflects more radar than before, for example where water receded and left wet "
                 "ground, or where forest was flooded. Blue: it reflects less, for example new open water or "
-                "vegetation that was removed. White: no real change."
+                "vegetation that was removed. Where nothing is drawn there was no real change, or the "
+                "surface was too dark on both dates to judge."
             )
             if legend:
                 legend.min_label, legend.max_label = "darker than before", "brighter than before"

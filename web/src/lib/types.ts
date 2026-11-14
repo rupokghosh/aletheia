@@ -76,6 +76,8 @@ export interface LegendClass {
   label: string;
   /** "#rrggbb" */
   color: string;
+  /** the precise definition behind the plain label, for example "Brighter by at least 2.4 dB" */
+  detail?: string;
 }
 
 export interface Legend {
@@ -85,6 +87,9 @@ export interface Legend {
   max: number | null;
   colormap: string | null;
   classes: LegendClass[];
+  /** plain-language captions for the two ends of a continuous scale */
+  min_label?: string | null;
+  max_label?: string | null;
 }
 
 export interface Layer {
@@ -97,6 +102,27 @@ export interface Layer {
   legend: Legend | null;
   default_visible: boolean;
   date: string | null;
+  /** one or two sentences: what this layer shows and what its colours mean */
+  description?: string | null;
+  /** the precise name, for specialists */
+  technical_title?: string | null;
+  /** "advanced" layers are kept behind "More layers" */
+  group?: "main" | "advanced";
+}
+
+/** What a result says at one spot: GET /api/results/{id}/point */
+export interface PointReading {
+  result_id: string;
+  workflow: WorkflowKind;
+  lon: number;
+  lat: number;
+  /** the reading in one plain sentence */
+  sentence: string;
+  readings: Array<{ label: string; value: number; unit: string; note: string }>;
+  common_causes?: string[];
+  causes_note?: string;
+  /** time-series results: the history of this spot */
+  series?: Series[];
 }
 
 export interface SeriesPoint {
