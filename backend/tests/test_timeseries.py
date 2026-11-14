@@ -218,9 +218,10 @@ def test_summary_states_the_largest_step_next_to_the_typical_one(archive):
     result = timeseries.run_timeseries(request())
     headline = result.summary.headline
     assert headline.startswith("8 dates on 2 tracks from 9 December 2025 to 18 August 2026.")
-    assert "largest step between consecutive dates in HH was -2.20 dB" in headline
-    assert "between 1 July and 13 July 2026 on track 77" in headline
-    assert "typical date-to-date change of 1.05 dB" in headline  # median of |+2.0|, |-2.2|, |+0.1|, |+0.1|
+    # 2.2 dB against a usual 1.05 dB is under three times the usual change, so the series reads as steady
+    assert "stayed steady: the biggest change between two passes was 2.20 dB" in headline
+    assert "between 1 July and 13 July 2026 (track 77)" in headline
+    assert "usual change of 1.05 dB between passes" in headline  # median of |+2.0|, |-2.2|, |+0.1|, |+0.1|
     metrics = {m.key: m.central for m in result.summary.metrics}
     assert metrics == {"n_dates": 8, "n_tracks": 2, "largest_step_db": -2.2, "typical_step_db": 1.05}
     steps = result.stats["series"]["hh_t77_f27"]["steps"]

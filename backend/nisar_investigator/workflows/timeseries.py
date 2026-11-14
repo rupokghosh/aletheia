@@ -476,10 +476,19 @@ def _run(req: TimeSeriesRequest, request: dict, rec: provenance.Recorder) -> Wor
     if candidates:
         sid, steps = max(candidates, key=lambda c: abs(c[1]["largest_step_db"]))
         track = series_stats[sid]["track"]
-        headline += (
-            f" The largest step between consecutive dates in {main_pol} was {steps['largest_step_db']:+.2f} dB, "
-            f"between {common.pretty_span(steps['from'], steps['to'])} on track {track}"
-        )
+        step = steps["largest_step_db"]
+        verb = "rose" if step > 0 else "fell"
+        usual = steps["typical_step_db"]
+        if usual is not None and abs(step) >= 3 * max(usual, 0.05):
+            headline += (
+                f" Radar brightness was steady apart from one change: it {verb} by {abs(step):.2f} dB between "
+                f"{common.pretty_span(steps['from'], steps['to'])} (track {track})"
+            )
+        else:
+            headline += (
+                f" Radar brightness stayed steady: the biggest change between two passes was {abs(step):.2f} dB, "
+                f"between {common.pretty_span(steps['from'], steps['to'])} (track {track})"
+            )
         metrics.append(
             Metric(
                 key="largest_step_db",
@@ -490,7 +499,7 @@ def _run(req: TimeSeriesRequest, request: dict, rec: provenance.Recorder) -> Wor
             )
         )
         if steps["typical_step_db"] is not None:
-            headline += f", against a typical date-to-date change of {steps['typical_step_db']:.2f} dB."
+            headline += f", against a usual change of {steps['typical_step_db']:.2f} dB between passes."
             metrics.append(
                 Metric(
                     key="typical_step_db",

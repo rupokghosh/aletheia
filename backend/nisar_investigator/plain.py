@@ -23,12 +23,55 @@ _BRIGHTNESS = (
 _HV_NOTE = " This is the radar's second channel (HV), which responds mostly to vegetation."
 
 
+# Plain names for the numbers, in the order a newcomer should meet them. The first two with a range are
+# what the interface shows up front; the rest sit under "More numbers".
+_METRICS: dict[str, str] = {
+    # change
+    "increased_area_km2": "Area that got brighter to the radar",
+    "decreased_area_km2": "Area that got darker to the radar",
+    "increase_median_change_db": "Typical change where it got brighter",
+    "decrease_median_change_db": "Typical change where it got darker",
+    "analysed_area_km2": "Area analysed",
+    "cannot_tell_percent": "Share too dark on both dates to judge",
+    "scene_shift_db": "Overall shift removed before comparing",
+    "increased_area_km2_hv": "Area that got brighter in the vegetation channel",
+    "decreased_area_km2_hv": "Area that got darker in the vegetation channel",
+    # ground motion
+    "max_toward_satellite_cm": "Largest movement toward the satellite",
+    "max_away_from_satellite_cm": "Largest movement away from the satellite",
+    "area_above_2x_noise_km2": "Area that clearly moved (more than twice the noise)",
+    "area_above_3x_noise_km2": "Area that moved strongly (more than three times the noise)",
+    "noise_level_cm": "Noise level: smaller movements cannot be trusted",
+    "los_peak_to_peak_cm": "Difference between the two extremes",
+    "los_span_p5_p95_cm": "Spread of movement across most of the area",
+    "field_spread_cm": "Typical variation of movement across the area",
+    "masked_percent": "Share with no reliable measurement (water or lost signal)",
+    "ionosphere_range_cm": "Size of the upper-atmosphere correction",
+    # time series
+    "n_dates": "Dates used",
+    "n_tracks": "Satellite tracks",
+    "largest_step_db": "Biggest change between two passes",
+    "typical_step_db": "Usual change between two passes",
+}
+_METRIC_ORDER = {key: index for index, key in enumerate(_METRICS)}
+
+
+def _plain_metrics(result: WorkflowResult) -> None:
+    for metric in result.summary.metrics:
+        plain = _METRICS.get(metric.key)
+        if plain and metric.technical_label is None:
+            metric.technical_label, metric.label = metric.label, plain
+    result.summary.metrics.sort(key=lambda m: _METRIC_ORDER.get(m.key, len(_METRIC_ORDER)))
+
+
 def _date_from_id(layer_id: str) -> str:
     return layer_id.rsplit("_", 1)[-1]
 
 
 def annotate(result: WorkflowResult) -> WorkflowResult:
-    """Give every layer a plain title, a description of its colours, and captions for its legend."""
+    """Give every layer a plain title, a description of its colours, and captions for its legend,
+    and put the numbers in plain words."""
+    _plain_metrics(result)
     for layer in result.layers:
         if layer.technical_title:  # already annotated
             continue
@@ -243,11 +286,13 @@ def _series_reading(result: dict, lon: float, lat: float) -> dict:
     if not out_series:
         return {"readings": [], "series": [], "sentence": "No radar history could be read at this spot."}
     main = max((s for s in out_series if s["polarization"] in ("HH", "VV")), key=lambda s: len(s["points"]), default=out_series[0])
-    values = [p["value"] for p in main["points"]]
-    steps = [(abs(b["value"] - a["value"]), a, b) for a, b in zip(main["points"], main["points"][1:])]
+    calibrated = [p for p in main["points"] if p["tier"] != "beta"]
+    points = calibrated if len(calibrated) >= 3 else main["points"]  # beta dates are uncalibrated
+    values = [p["value"] for p in points]
+    steps = [(abs(b["value"] - a["value"]), a, b) for a, b in zip(points, points[1:])]
     biggest = max(steps, key=lambda s: s[0])
     sentence = (
-        f"Over {len(values)} dates this spot ranged from {min(values):.1f} to {max(values):.1f} dB "
+        f"Over {len(values)} {'calibrated ' if points is calibrated else ''}dates this spot ranged from {min(values):.1f} to {max(values):.1f} dB "
         f"({brightness_words(float(np.median(values)), None)}). The largest jump between consecutive dates was "
         f"{biggest[2]['value'] - biggest[1]['value']:+.1f} dB, from {common.pretty_date(biggest[1]['date'])} "
         f"to {common.pretty_date(biggest[2]['date'])}."

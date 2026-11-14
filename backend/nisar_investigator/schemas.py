@@ -59,6 +59,7 @@ class Coverage(BaseModel):
 class Metric(BaseModel):
     key: str
     label: str
+    technical_label: str | None = None  # the precise definition, kept when `label` is put in plain words
     unit: str = ""
     central: float | None = None
     low: float | None = None
