@@ -558,6 +558,8 @@ class _ChatBackend:
                 # Ollama's default context is small; a truncated tool result would silently drop evidence.
                 "options": {"num_ctx": config.LLM_NUM_CTX, "temperature": 0.2},
             }
+            if config.LLM_THINK is not None:
+                payload["think"] = config.LLM_THINK
             headers = {}
         else:
             url = f"{config.LLM_BASE_URL.rstrip('/')}/chat/completions"

@@ -31,6 +31,9 @@ AGENT_EFFORT = os.environ.get("NISAR_AGENT_EFFORT", "medium")
 LLM_MODEL = os.environ.get("NISAR_LLM_MODEL", "qwen3:14b")
 OLLAMA_HOST = os.environ.get("NISAR_OLLAMA_HOST", "http://localhost:11434")
 LLM_NUM_CTX = int(os.environ.get("NISAR_LLM_NUM_CTX", 32768))
+# Qwen3 and similar models "think" before answering by default. "false" is several times faster and weaker
+# at planning; unset leaves the model's default.
+LLM_THINK = {"true": True, "false": False}.get(os.environ.get("NISAR_LLM_THINK", "").lower())
 LLM_BASE_URL = os.environ.get("NISAR_LLM_BASE_URL", "")  # any OpenAI-compatible endpoint, e.g. https://host/v1
 LLM_API_KEY = os.environ.get("NISAR_LLM_API_KEY", "")
 
