@@ -15,7 +15,7 @@ from datetime import date
 import anthropic
 import requests
 
-from . import catalog, config, context, provenance
+from . import catalog, config, context, plain, provenance
 from .schemas import (
     ChangeRequest,
     Investigation,
@@ -346,7 +346,7 @@ class _Session:
     def _workflow(self, module: str, func: str, request):
         try:
             mod = __import__(f"nisar_investigator.workflows.{module}", fromlist=[func])
-            result = getattr(mod, func)(request).model_dump(mode="json")
+            result = plain.annotate(getattr(mod, func)(request)).model_dump(mode="json")
         except ImportError:
             digest = {"id": f"unavailable_{module}", "status": "unsupported", "summary": {"headline": f"The {module} analysis is not available on this server."}}
             return digest, digest, digest["summary"]["headline"]

@@ -77,6 +77,9 @@ class Legend(BaseModel):
     max: float | None = None
     colormap: str | None = None
     classes: list[dict[str, str]] = Field(default_factory=list)  # [{"label": ..., "color": "#rrggbb"}]
+    # plain-language captions for the two ends of a continuous scale
+    min_label: str | None = None
+    max_label: str | None = None
 
 
 class Layer(BaseModel):
@@ -88,6 +91,10 @@ class Layer(BaseModel):
     legend: Legend | None = None
     default_visible: bool = False
     date: str | None = None
+    # plain-language presentation, filled in by nisar_investigator.plain
+    description: str | None = None  # one or two sentences: what am I looking at, what do the colours mean
+    technical_title: str | None = None  # the precise name, for the receipt and for specialists
+    group: Literal["main", "advanced"] = "main"
 
 
 class SeriesPoint(BaseModel):

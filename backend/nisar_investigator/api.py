@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import __version__, agent, catalog, config, provenance
+from . import __version__, agent, catalog, config, plain, provenance
 from .schemas import ChangeRequest, Coverage, InvestigateRequest, MotionRequest, TimeSeriesRequest, WorkflowResult
 from .workflows import common
 from .workflows.change import run_change
@@ -165,7 +165,7 @@ async def coverage(
 async def _run(workflow: str, run: Callable[[BaseModel], WorkflowResult], req: BaseModel) -> WorkflowResult:
     """Run a blocking workflow off the event loop. Whatever happens, the client gets a WorkflowResult."""
     try:
-        return await run_in_threadpool(run, req)
+        return plain.annotate(await run_in_threadpool(run, req))
     except Exception as exc:  # noqa: BLE001 - workflows report their own problems; this is the last line of defence
         common.log_failure(workflow, exc)
         headline = f"The {workflow} analysis failed unexpectedly ({type(exc).__name__}). Nothing was measured."
@@ -228,6 +228,17 @@ async def result(result_id: str) -> JSONResponse:
     if stored is None:
         raise ApiError(404, "not_found", f"No stored result has the id {result_id!r}.")
     return JSONResponse(stored)
+
+
+@app.get("/api/results/{result_id}/point")
+async def point(result_id: str, lon: float = Query(..., ge=-180, le=180), lat: float = Query(..., ge=-90, le=90)) -> dict:
+    """What a stored result says at one spot: the values there, and what they mean in plain words."""
+    if not _RESULT_ID.fullmatch(result_id):
+        raise ApiError(404, "not_found", "No such result.")
+    try:
+        return await run_in_threadpool(plain.read_point, result_id, lon, lat)
+    except plain.PointError as exc:
+        raise ApiError(404, "no_reading", str(exc)) from None
 
 
 @app.get("/api/artifacts/{result_id}/{filename}")
