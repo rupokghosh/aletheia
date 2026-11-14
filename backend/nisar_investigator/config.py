@@ -9,6 +9,25 @@ PACKAGE_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = PACKAGE_DIR.parent
 
 
+def load_env() -> None:
+    """Read KEY=VALUE lines from backend/.env into the environment without overriding what is already set."""
+    path = BACKEND_DIR / ".env"
+    if not path.exists():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_env()
+
+AGENT_MODEL = os.environ.get("NISAR_AGENT_MODEL", "claude-opus-5-5")
+AGENT_EFFORT = os.environ.get("NISAR_AGENT_EFFORT", "medium")
+
+
 def cache_dir() -> Path:
     path = Path(os.environ.get("NISAR_CACHE_DIR", BACKEND_DIR / ".cache"))
     path.mkdir(parents=True, exist_ok=True)
