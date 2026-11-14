@@ -275,10 +275,24 @@ def _traceable(text_value: str, unit: str, pool: list[float]) -> bool:
     return False
 
 
+_RANGE_START = re.compile(
+    r"(?<![\w.])(-?\d+(?:\.\d+)?)\s*(?:to|and|-|\u2013)\s*-?\d+(?:\.\d+)?\s*"
+    r"(km2|km\u00b2|square kilometres|square kilometers|dB|cm|mm|m|percent|%)(?![\w\u00b2])"
+)
+_ANY_NUMBER = re.compile(r"(?<![\w.])-?\d+(?:\.\d+)?")
+
+
+def _figures(statement: str) -> list[tuple[str, str]]:
+    """(value, unit) for every number that carries a unit, including the first number of "X to Y unit"."""
+    found = [(m.group(1), m.group(2)) for m in _RANGE_START.finditer(statement)]
+    found += [(m.group(1), m.group(2)) for m in _FIGURE.finditer(statement)]
+    return found
+
+
 def untraceable_figures(statement: str, digest: dict | None) -> list[str]:
     """Figures with units in a statement that do not appear in the cited result."""
     pool = _numbers(digest) if digest is not None else []
-    return [f"{m.group(1)} {m.group(2)}" for m in _FIGURE.finditer(statement) if not _traceable(m.group(1), m.group(2), pool)]
+    return [f"{value} {unit}" for value, unit in _figures(statement) if not _traceable(value, unit, pool)]
 
 
 def half_quoted_ranges(statement: str, digest: dict | None, *, central_counts: bool = True) -> list[str]:
@@ -287,7 +301,7 @@ def half_quoted_ranges(statement: str, digest: dict | None, *, central_counts: b
     Areas and displacements are computed as low/central/high. Quoting a single value would overstate what
     the method can resolve, so a statement that uses any of the three must give both ends.
     """
-    figures = [m.group(1) for m in _FIGURE.finditer(statement)]
+    figures = _ANY_NUMBER.findall(statement)
 
     def quoted(value: float) -> bool:
         return any(_traceable(text, "", [value]) for text in figures)

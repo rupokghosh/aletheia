@@ -199,6 +199,10 @@ class MotionRequest(BaseModel):
     bbox: BBox
     reference_date: str | None = None
     track: int | None = None
+    # optional processing choices; the workflow's documented defaults apply when omitted
+    coherence_threshold: float | None = None
+    remove_ramp: bool | None = None
+    apply_ionosphere: bool | None = None
 
 
 class InvestigateRequest(BaseModel):

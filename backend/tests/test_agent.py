@@ -25,6 +25,11 @@ def test_derived_or_invented_figures_are_flagged():
     assert agent.untraceable_figures("The change covers 2.5 km2.", DIGEST) == ["2.5 km2"]
 
 
+def test_both_ends_of_a_written_range_are_checked():
+    assert agent.untraceable_figures("Brightness rose over 0.21 to 1.09 km2.", DIGEST) == []
+    assert agent.untraceable_figures("Brightness rose over 0.05 to 1.09 km2.", DIGEST) == ["0.05 km2"]
+
+
 def test_dates_and_counts_are_not_treated_as_figures():
     assert agent.untraceable_figures("Measured on 19 June 2026 across 9 dates on 2 tracks.", DIGEST) == []
 
