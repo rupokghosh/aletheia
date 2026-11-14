@@ -1,0 +1,291 @@
+@import "tailwindcss";
+
+/* Design tokens. A light, quiet interface: black, white and grey, with colour kept for status
+   (calibration tier, sample data, errors) and for the data itself. There is no dark theme. */
+:root {
+  color-scheme: light;
+
+  --bg: #f8f8f8;
+  --panel: #ffffff;
+  --raised: #f6f6f6;
+  --raised-2: #efefef;
+  --line: rgb(0 0 0 / 0.08);
+  --line-strong: rgb(0 0 0 / 0.16);
+
+  /* The two greys are a little darker than a pure 56% and 40% black so that text meets WCAG AA. */
+  --ink: #191919;
+  --ink-2: rgb(25 25 25 / 0.68);
+  --ink-3: rgb(25 25 25 / 0.56);
+
+  --green: #00a558;
+  --blue: #317cff;
+  --purple: #956cde;
+  --red: #f53b3a;
+  --danger: #c9302f;
+
+  /* calibration tiers: always paired with a shape and a word, never colour alone */
+  --tier-validated: var(--green);
+  --tier-provisional: var(--blue);
+  --tier-beta: #8c8c8c;
+
+  /* chart series, in fixed order */
+  --series-1: #191919;
+  --series-2: #317cff;
+  --series-3: #956cde;
+  --series-4: #00a558;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);
+
+  /* The one easing used for the few transitions in the interface: fast start, soft landing. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
+  --color-raised-2: var(--raised-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-green: var(--green);
+  --color-blue: var(--blue);
+  --color-purple: var(--purple);
+  --color-red: var(--red);
+  --color-danger: var(--danger);
+  --shadow-card: var(--shadow-card);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Element defaults live in the base layer so that utility classes can override them. */
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.4;
+    /* Figures keep their width everywhere, so values line up and do not jitter when they change. */
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2 {
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  ::selection {
+    background: #191919;
+    color: #ffffff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  button,
+  [role="button"],
+  summary,
+  select,
+  label[for] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  input:disabled {
+    cursor: not-allowed;
+  }
+
+  /* A press is acknowledged at once. `scale` is its own property, so it never fights a translate. */
+  button {
+    transition: scale 160ms var(--ease-out);
+  }
+
+  button:active:not(:disabled) {
+    scale: 0.97;
+  }
+
+  input[type="range"],
+  input[type="checkbox"] {
+    accent-color: var(--ink);
+  }
+
+  input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  summary {
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+@layer components {
+  .scroll-quiet {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(0 0 0 / 0.2) transparent;
+  }
+
+  /* Form fields share one look. */
+  .field {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    background: var(--panel);
+    color: var(--ink);
+    font-size: 0.9375rem;
+  }
+
+  .field::placeholder {
+    color: var(--ink-3);
+  }
+
+  .field:hover:not(:disabled) {
+    border-color: rgb(0 0 0 / 0.32);
+  }
+
+  .field:disabled {
+    opacity: 0.5;
+  }
+
+  select.field {
+    appearance: none;
+    padding-right: 2.25rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%23191919' stroke-opacity='.6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.875rem center;
+  }
+
+  /* Pressable things that are not <button> elements get the same press feedback. Colours switch at
+     once: a pill that changes from white to black must never pass through an unreadable mix. */
+  .press {
+    transition: scale 160ms var(--ease-out);
+  }
+
+  .press:active {
+    scale: 0.97;
+  }
+
+  /* A card opened by a click grows from its trigger; set the origin with an origin-* class. */
+  .popover {
+    transition:
+      opacity 150ms var(--ease-out),
+      scale 150ms var(--ease-out);
+
+    @starting-style {
+      opacity: 0;
+      scale: 0.97;
+    }
+  }
+
+  /* The one modal stays centred and fades in. */
+  dialog[open] {
+    transition:
+      opacity 200ms var(--ease-out),
+      scale 200ms var(--ease-out);
+
+    @starting-style {
+      opacity: 0;
+      scale: 0.98;
+    }
+  }
+
+  /* The loading indicator is a slow sweep, switched off for reduced motion below. */
+  @keyframes sweep {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(350%);
+    }
+  }
+
+  .sweep {
+    animation: sweep 1.6s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    .sweep {
+      animation: none;
+      transform: none;
+      width: 100% !important;
+      opacity: 0.4;
+    }
+  }
+}
+
+/* MapLibre controls, restyled to match the cards. */
+.maplibregl-map {
+  font-family: var(--font-sans);
+}
+
+.maplibregl-ctrl-group {
+  border: 1px solid var(--line);
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-card) !important;
+  overflow: hidden;
+}
+
+.maplibregl-ctrl-group button {
+  width: 36px;
+  height: 36px;
+}
+
+.maplibregl-ctrl-group button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+  box-shadow: none !important;
+}
+
+.maplibregl-ctrl-attrib {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.maplibregl-ctrl-scale {
+  border-color: rgb(25 25 25 / 0.6);
+  color: var(--ink);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.maplibregl-canvas:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+/* On a phone the map is zoomed by pinching, and the corner is needed for the layers card. */
+@media (max-width: 767px) {
+  .maplibregl-ctrl-top-right {
+    display: none;
+  }
+}
