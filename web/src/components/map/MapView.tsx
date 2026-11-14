@@ -13,6 +13,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { readPoint } from "@/lib/api";
 import { APP_NAME, BASEMAP_STYLE_URL, LARGE_AREA_KM2 } from "@/lib/config";
+import { nearestPlaceName } from "@/lib/geocode";
 import { formatArea } from "@/lib/format";
 import { activeGroup, layerMode, mapLayersFor } from "@/lib/layers";
 import { activeResult, useApp } from "@/lib/store";
@@ -28,6 +29,8 @@ import { useResultLayers } from "./useResultLayers";
 /** MapLibre 6 loads its worker as a separate module; scripts/copy-maplibre-worker.mjs puts it here. */
 const WORKER_URL = "/vendor/maplibre-gl-worker.mjs";
 const NO_LAYERS: ReturnType<typeof mapLayersFor> = [];
+/** Side of the square placed around a clicked spot, in km: big enough to show context, small enough to be fast. */
+const PICK_KM = 10;
 /** Width of the floating card plus its margins: the map keeps this much clear on a wide screen. */
 const CARD_SPACE = 432;
 
@@ -118,6 +121,31 @@ export default function MapView() {
   const onDrawn = useCallback((bbox: BBox) => dispatch({ type: "area", bbox }), [dispatch]);
   const onCancel = useCallback(() => dispatch({ type: "drawing", drawing: false }), [dispatch]);
   const draftArea = useAreaLayer(map, { bbox: state.bbox, drawing: state.drawing, onDrawn, onCancel });
+
+  // ---- picking a place: before any area exists, a click puts a square around the spot
+  const pickable = state.bbox === null && !state.drawing && state.view === "home";
+  useEffect(() => {
+    if (!map || !pickable) return;
+    const canvas = map.getCanvas();
+    canvas.style.cursor = "pointer";
+    const onClick = (event: MapMouseEvent) => {
+      const lon = ((event.lngLat.lng + 540) % 360) - 180;
+      const lat = Math.max(-84, Math.min(84, event.lngLat.lat));
+      const dLat = PICK_KM / 2 / 111.2;
+      const dLon = PICK_KM / 2 / (111.32 * Math.max(0.1, Math.cos((lat * Math.PI) / 180)));
+      const bbox: BBox = [lon - dLon, lat - dLat, lon + dLon, lat + dLat];
+      dispatch({ type: "area", bbox, placeName: null });
+      dispatch({ type: "flyTo", bbox });
+      void nearestPlaceName(lon, lat).then((name) => {
+        if (name) dispatch({ type: "placeName", placeName: `Near ${name}` });
+      });
+    };
+    map.on("click", onClick);
+    return () => {
+      map.off("click", onClick);
+      canvas.style.cursor = "";
+    };
+  }, [map, pickable, dispatch]);
 
   // ---- reference imagery
   useGibsLayer(map, state.gibs);

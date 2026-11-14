@@ -1,1 +1,32 @@
-[]
+[
+ {
+  "id": "kamloops-lake",
+  "title": "Kamloops Lake through the summer",
+  "place_name": "Kamloops Lake, British Columbia",
+  "question": "How did the east end of Kamloops Lake change between June and October 2026, and does the river gauge agree?",
+  "summary": "Between 26 June and 24 October 2026, radar brightness rose over 0.26 to 0.48 km\u00b2 (HH) and fell over 0.87 to 1.31 km\u00b2 (HH) at the east end of Kamloops Lake. The nearby Thompson River gauge (8.4 km away) showed water levels fell from 4.992 m (26 June) to 2.313 m (24 October 2026), consistent with some areas losing water cover.",
+  "file": "kamloops-lake/investigation.json",
+  "model": "qwen3:14b (local, Ollama)",
+  "generated_at": "2026-11-14T22:52:46Z"
+ },
+ {
+  "id": "venezuela-earthquakes",
+  "title": "The June 2026 earthquakes in Venezuela",
+  "place_name": "Carabobo coast, Venezuela",
+  "question": "Did the ground move here during the earthquakes of 24 June 2026, and by how much?",
+  "summary": "The ground moved by up to 48\u201366 cm (track 54) and 47\u201362 cm (track 162) along the radar line of sight between 17\u201329 June and 13\u201325 June 2026, overlapping with the 24 June 2026 earthquakes. This motion was detected in interferograms and is likely related to the seismic activity, though the exact timing within the 12-day pairs cannot be isolated.",
+  "file": "venezuela-earthquakes/investigation.json",
+  "model": "qwen3:14b (local, Ollama)",
+  "generated_at": "2026-11-14T23:05:46Z"
+ },
+ {
+  "id": "choctawhatchee-floodplain",
+  "title": "A Florida river floodplain in October",
+  "place_name": "Choctawhatchee River floodplain, Florida",
+  "question": "How did this river floodplain change between 27 September and 21 October 2026, and do the river gauges agree?",
+  "summary": "Between 27 September and 21 October 2026, radar brightness (HH) rose over 0.05 to 32.37 km\u00b2 (central estimate 2.5 km\u00b2) with a median change of +3.75 dB. River gauge 02366500 rose from 1.494 m on 27 September to 3.313 m on 21 October 2026 (station 6.4 km away). Gauge 02365769 rose from 2.871 m to 3.56 m over the same period.",
+  "file": "choctawhatchee-floodplain/investigation.json",
+  "model": "qwen3:14b (local, Ollama)",
+  "generated_at": "2026-11-14T23:14:52Z"
+ }
+]

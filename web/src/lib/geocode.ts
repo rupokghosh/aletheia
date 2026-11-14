@@ -92,3 +92,21 @@ export function placeBounds(place: Place): BBox {
   const dLon = dLat / Math.max(0.2, Math.cos((lat * Math.PI) / 180));
   return [lon - dLon, lat - dLat, lon + dLon, lat + dLat];
 }
+
+/** A short name for a spot on the map ("Kamloops, British Columbia"), or null when none can be found. */
+export async function nearestPlaceName(lon: number, lat: number, signal?: AbortSignal): Promise<string | null> {
+  const url = `${GEOCODER_URL.replace(/\/api\/?$/, "")}/reverse?lon=${lon.toFixed(5)}&lat=${lat.toFixed(5)}&lang=en`;
+  try {
+    const response = await fetch(url, { signal, headers: { Accept: "application/json" } });
+    if (!response.ok) return null;
+    const body = (await response.json()) as { features?: PhotonFeature[] };
+    const properties = body.features?.[0]?.properties;
+    if (!properties) return null;
+    const place = properties.city ?? properties.name ?? properties.county;
+    const region = properties.state ?? properties.country;
+    if (!place) return region ?? null;
+    return region && region !== place ? `${place}, ${region}` : place;
+  } catch {
+    return null; // a name is a nicety: the area works without one
+  }
+}

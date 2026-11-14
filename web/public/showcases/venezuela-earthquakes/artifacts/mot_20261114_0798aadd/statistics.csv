@@ -1,0 +1,6 @@
+variant,coherence_threshold,ionosphere_applied,ramp_removed,largest_region_only,usable_fraction,median_removed_cm,robust_spread_cm,p1_cm,p5_cm,p95_cm,p99_cm,span_p5_p95_cm,range_p1_p99_cm
+default settings,0.3,True,False,False,0.313,14.489,21.438,-46.584,-41.568,16.053,18.886,57.621,65.47
+coherence >= 0.2,0.2,True,False,False,0.4512,15.14,16.908,-47.03,-41.657,14.542,17.831,56.199,64.861
+coherence >= 0.4,0.4,True,False,False,0.1868,14.391,24.732,-46.578,-41.729,17.144,19.405,58.873,65.983
+ionosphere correction not applied,0.3,False,False,False,0.313,-16.251,15.851,-43.737,-39.852,11.816,13.595,51.668,57.332
+planar ramp removed,0.3,True,True,False,0.313,2.16,14.028,-31.537,-25.465,13.96,16.319,39.425,47.856

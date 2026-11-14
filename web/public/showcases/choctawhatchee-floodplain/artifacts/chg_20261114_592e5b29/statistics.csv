@@ -1,0 +1,49 @@
+polarization,quantity,region,level,value,unit
+HH,mean_db,whole area,before,-3.62,dB
+HH,mean_db,whole area,after,-2.53,dB
+HH,scene_shift_removed,whole area,,0.23,dB
+HH,no_change_sigma,whole area,,1.01,dB
+HH,threshold,whole area,lenient,2.02,dB
+HH,threshold,whole area,central,3.04,dB
+HH,threshold,whole area,strict,4.05,dB
+HH,noise_floor,whole area,before,-15.0,dB
+HH,noise_floor,whole area,after,-15.0,dB
+HH,noise_floor_fraction,whole area,before,0.002,fraction
+HH,noise_floor_fraction,whole area,after,0.0,fraction
+HH,noise_floor_fraction,whole area,both,0.0,fraction
+HH,area,increased,low,0.05,km2
+HH,area,increased,central,2.48,km2
+HH,area,increased,high,32.37,km2
+HH,mean_db,increased,before,-3.29,dB
+HH,mean_db,increased,after,0.89,dB
+HH,median_change,increased,,3.75,dB
+HH,area,decreased,low,0.0,km2
+HH,area,decreased,central,0.08,km2
+HH,area,decreased,high,0.5,km2
+HH,mean_db,decreased,before,-4.02,dB
+HH,mean_db,decreased,after,-7.85,dB
+HH,median_change,decreased,,-3.79,dB
+HV,mean_db,whole area,before,-9.97,dB
+HV,mean_db,whole area,after,-10.01,dB
+HV,scene_shift_removed,whole area,,-0.1,dB
+HV,no_change_sigma,whole area,,0.58,dB
+HV,threshold,whole area,lenient,2.0,dB
+HV,threshold,whole area,central,2.0,dB
+HV,threshold,whole area,strict,2.34,dB
+HV,noise_floor,whole area,before,-20.0,dB
+HV,noise_floor,whole area,after,-20.0,dB
+HV,noise_floor_fraction,whole area,before,0.005,fraction
+HV,noise_floor_fraction,whole area,after,0.002,fraction
+HV,noise_floor_fraction,whole area,both,0.002,fraction
+HV,area,increased,low,0.0,km2
+HV,area,increased,central,0.02,km2
+HV,area,increased,high,0.02,km2
+HV,mean_db,increased,before,-20.7,dB
+HV,mean_db,increased,after,-17.88,dB
+HV,median_change,increased,,2.72,dB
+HV,area,decreased,low,0.26,km2
+HV,area,decreased,central,0.38,km2
+HV,area,decreased,high,0.38,km2
+HV,mean_db,decreased,before,-10.24,dB
+HV,mean_db,decreased,after,-14.14,dB
+HV,median_change,decreased,,-3.26,dB

@@ -181,7 +181,10 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** NASA GIBS quick-look imagery: a picture for orientation, with its date. Never measured from. */
+/**
+ * NASA's own picture of the NISAR radar signal, for looking at the planet. Never measured from.
+ * By default the last 12 days are stacked, which is one full pass over the Earth.
+ */
 function ReferenceImagery() {
   const { state, dispatch } = useApp();
   const { gibs } = state;
@@ -192,6 +195,16 @@ function ReferenceImagery() {
     if (date >= GIBS.firstDate && date <= latest) dispatch({ type: "gibs", gibs: { date } });
   };
   const step = "press grid size-9 shrink-0 place-items-center rounded-full border border-line-strong text-ink-2 hover:bg-raised";
+  const span = (days: number, label: string) => (
+    <button
+      type="button"
+      aria-pressed={gibs.days === days}
+      className={`press rounded-full border px-3 py-1.5 text-[13px] ${gibs.days === days ? "border-ink bg-ink text-white" : "border-line-strong bg-panel text-ink hover:bg-raised"}`}
+      onClick={() => dispatch({ type: "gibs", gibs: { days } })}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <div>
@@ -205,29 +218,55 @@ function ReferenceImagery() {
         />
         <label htmlFor={toggleId} className="text-sm leading-snug text-ink">
           {GIBS.label}
+          <span className="block text-[13px] text-ink-3">NASA&rsquo;s picture of what NISAR saw. For looking, not measuring.</span>
         </label>
       </div>
       {gibs.enabled ? (
-        <div className="mt-2 pl-[26px]">
-          <label htmlFor={dateId} className="mb-1 block text-[13px] text-ink-3">
-            Day shown (UTC). Most days are empty at any one place.
-          </label>
-          <div className="flex items-center gap-1.5">
-            <button type="button" aria-label="Previous day" className={step} onClick={() => setDate(isoFromDayNumber(dayNumber(gibs.date) - 1))}>
-              <ChevronLeftIcon />
-            </button>
-            <input
-              id={dateId}
-              type="date"
-              className="field min-h-9 py-1 text-sm"
-              min={GIBS.firstDate}
-              max={latest}
-              value={gibs.date}
-              onChange={(event) => setDate(event.target.value)}
-            />
-            <button type="button" aria-label="Next day" className={step} onClick={() => setDate(isoFromDayNumber(dayNumber(gibs.date) + 1))}>
-              <ChevronRightIcon />
-            </button>
+        <div className="mt-2 space-y-2.5 pl-[26px]">
+          <ul className="space-y-1 text-[13px] leading-snug text-ink-2">
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-block size-3 shrink-0 rounded-[3px]" style={{ background: "#5fd24a" }} aria-hidden="true" />
+              Green: vegetation
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-block size-3 shrink-0 rounded-[3px]" style={{ background: "#1c2f6b" }} aria-hidden="true" />
+              Blue to black: open water and other smooth surfaces
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-block size-3 shrink-0 rounded-[3px]" style={{ background: "#c8873a" }} aria-hidden="true" />
+              Orange and brown: sparse, dry or bare ground
+            </li>
+          </ul>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Days shown">
+            {span(12, "Last 12 days")}
+            {span(1, "One day")}
+          </div>
+          <p className="text-[13px] leading-snug text-ink-3">
+            {gibs.days > 1
+              ? "The satellite returns to every place after 12 days, so 12 days of passes cover the planet. The newest days are still being processed by NASA, so the picture starts two weeks back."
+              : "One day shows only that day\u2019s passes: the strips are the paths the satellite flew over."}
+          </p>
+          <div>
+            <label htmlFor={dateId} className="mb-1 block text-[13px] text-ink-3">
+              {gibs.days > 1 ? "Up to this day" : "Day shown"} (UTC)
+            </label>
+            <div className="flex items-center gap-1.5">
+              <button type="button" aria-label="Previous day" className={step} onClick={() => setDate(isoFromDayNumber(dayNumber(gibs.date) - 1))}>
+                <ChevronLeftIcon />
+              </button>
+              <input
+                id={dateId}
+                type="date"
+                className="field min-h-9 py-1 text-sm"
+                min={GIBS.firstDate}
+                max={latest}
+                value={gibs.date}
+                onChange={(event) => setDate(event.target.value)}
+              />
+              <button type="button" aria-label="Next day" className={step} onClick={() => setDate(isoFromDayNumber(dayNumber(gibs.date) + 1))}>
+                <ChevronRightIcon />
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

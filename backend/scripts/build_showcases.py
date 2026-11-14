@@ -16,30 +16,29 @@ import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-OUT = REPO / "showcases"
-WEB_OUT = REPO / "web" / "public" / "showcases"
+OUT = REPO / "web" / "public" / "showcases"  # served as static files by the web app
 
 SHOWCASES = [
     {
         "id": "kamloops-lake",
-        "title": "A lake drawing down through the summer",
+        "title": "Kamloops Lake through the summer",
         "place_name": "Kamloops Lake, British Columbia",
         "bbox": (-120.56, 50.675, -120.40, 50.735),
         "question": "How did the east end of Kamloops Lake change between June and October 2026, and does the river gauge agree?",
     },
     {
         "id": "venezuela-earthquakes",
-        "title": "Ground motion from two large earthquakes",
+        "title": "The June 2026 earthquakes in Venezuela",
         "place_name": "Carabobo coast, Venezuela",
         "bbox": (-68.45, 10.30, -67.95, 10.75),
         "question": "Did the ground move here during the earthquakes of 24 June 2026, and by how much?",
     },
     {
         "id": "choctawhatchee-floodplain",
-        "title": "Flooding under forest after a hurricane",
+        "title": "A Florida river floodplain in October",
         "place_name": "Choctawhatchee River floodplain, Florida",
         "bbox": (-86.08, 30.37, -85.84, 30.49),
-        "question": "What changed along this river floodplain between late September and late October 2026?",
+        "question": "How did this river floodplain change between 27 September and 21 October 2026, and do the river gauges agree?",
     },
 ]
 
@@ -69,6 +68,9 @@ def _export(showcase: dict, investigation: dict, artifacts_dir: Path) -> dict:
         shutil.copy2(source, dest)
         return f"/showcases/{slug}/artifacts/{result_id}/{filename}"
 
+    from nisar_investigator import plain
+
+    investigation["results"] = {key: plain.annotate_dict(value) for key, value in investigation["results"].items()}
     for result in investigation["results"].values():
         if not isinstance(result, dict):
             continue
@@ -103,9 +105,26 @@ def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--only")
     p.add_argument("--skip-existing", action="store_true")
+    p.add_argument("--refresh", action="store_true", help="re-apply titles and plain layer names to exported showcases, without running anything")
     a = p.parse_args()
 
-    OUT.mkdir(exist_ok=True)
+    OUT.mkdir(parents=True, exist_ok=True)
+    if a.refresh:
+        from nisar_investigator import plain
+
+        entries = {e["id"]: e for e in json.loads((OUT / "index.json").read_text())}
+        for showcase in SHOWCASES:
+            path = OUT / showcase["id"] / "investigation.json"
+            if not path.exists() or showcase["id"] not in entries:
+                continue
+            investigation = json.loads(path.read_text())
+            investigation["results"] = {k: plain.annotate_dict(v) for k, v in investigation["results"].items()}
+            path.write_text(json.dumps(investigation, indent=1))
+            entries[showcase["id"]].update(title=showcase["title"], place_name=showcase["place_name"])
+        (OUT / "index.json").write_text(json.dumps([entries[s["id"]] for s in SHOWCASES if s["id"] in entries], indent=1))
+        print("refreshed", list(entries))
+        return
+
     index_path = OUT / "index.json"
     index = {e["id"]: e for e in json.loads(index_path.read_text())} if index_path.exists() else {}
 
@@ -135,9 +154,6 @@ def main() -> None:
         print(f"  ANSWER: {report['answer']}\n  OBSERVED: {len(report['observed'])}  EXPLANATIONS: {len(report['possible_explanations'])}  "
               f"UNKNOWN: {len(report['unknown'])}  CONFIDENCE: {report['confidence'][:80]}", flush=True)
 
-    if WEB_OUT.parent.exists():
-        shutil.copytree(OUT, WEB_OUT, dirs_exist_ok=True)
-        print(f"\ncopied to {WEB_OUT.relative_to(REPO)}", flush=True)
     size = sum(f.stat().st_size for f in OUT.rglob("*") if f.is_file()) / 1e6
     print(f"showcase bundle: {size:.1f} MB in {OUT.relative_to(REPO)}", flush=True)
 

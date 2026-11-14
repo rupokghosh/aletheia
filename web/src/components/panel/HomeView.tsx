@@ -114,17 +114,22 @@ export function HomeView() {
       {bbox ? null : <p className="mb-4 max-w-[65ch] text-[17px] leading-snug text-ink">{APP_TAGLINE}</p>}
 
       <PlaceSearch />
+      {bbox ? null : (
+        <p className="mt-3 max-w-[65ch] text-[15px] leading-snug text-ink">
+          Click anywhere on the map to pick a place, or search for one above.
+        </p>
+      )}
 
       {bbox ? (
         <AreaView bbox={bbox} />
       ) : (
         <>
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-            <Button variant="primary" aria-pressed={drawing} onClick={() => dispatch({ type: "drawing", drawing: !drawing })}>
+            <Button variant="secondary" aria-pressed={drawing} onClick={() => dispatch({ type: "drawing", drawing: !drawing })}>
               <DrawIcon />
               {drawing ? "Cancel drawing" : "Draw area"}
             </Button>
-            <p className="text-sm text-ink-3">{drawing ? "Drag a rectangle on the map." : "Then drag a rectangle on the map."}</p>
+            <p className="text-sm text-ink-3">{drawing ? "Drag a rectangle on the map." : "to choose the exact area yourself."}</p>
           </div>
           <details className="mt-3">
             <summary className="w-max text-sm text-ink-2 underline underline-offset-2 hover:text-ink">Enter coordinates instead</summary>

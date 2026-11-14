@@ -17,7 +17,7 @@ export const GIBS = {
   wmsUrl: "https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi",
   layer: "NISAR_L2_Geocoded_Polarimetric_Covariance",
   firstDate: "2025-10-29",
-  label: "NASA\u2019s radar picture for a day (for looking, not measuring)",
+  label: "Radar picture of the Earth",
 } as const;
 
 /** Static index of precomputed investigations, served from web/public/showcases. */

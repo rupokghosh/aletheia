@@ -135,6 +135,17 @@ export function AreaView({ bbox }: { bbox: BBox }) {
   const views = useMemo(() => (coverage.data ? stackViews(coverage.data, bbox) : []), [coverage.data, bbox]);
   const ready = coverage.status === "ready" && coverage.data !== null;
   const choose = (tab: AnalysisTab) => dispatch({ type: "analysisTab", tab: tab === analysisTab ? "ask" : tab });
+  // What exists here for each choice, so nobody has to open one to find out it is empty.
+  const summary = useMemo(() => summarizeCoverage(views), [views]);
+  const pairs = useMemo(() => {
+    const motion = views.filter((view) => view.isPair && view.stack.product === "GUNW");
+    return new Set(motion.flatMap((view) => view.marks.map((mark) => `${view.key}|${mark.date}`))).size;
+  }, [views]);
+  const available: Record<WorkflowKind, string | null> = {
+    change: summary && summary.dates >= 2 ? `${plural(summary.dates, "date")} to choose from` : null,
+    timeseries: summary ? `${plural(summary.dates, "date")}, ${formatMonthSpan(summary.first, summary.last)}` : null,
+    motion: pairs > 0 ? `${plural(pairs, "pair")} of passes` : null,
+  };
 
   return (
     <>
@@ -156,6 +167,11 @@ export function AreaView({ bbox }: { bbox: BBox }) {
                 >
                   <span className="block text-[15px] text-ink">{item.label}</span>
                   <span className="mt-0.5 block text-sm leading-snug text-ink-2">{item.about}</span>
+                  {ready ? (
+                    <span className={`mt-1.5 block text-[13px] ${available[item.id] ? "text-[#007a41]" : "text-ink-3"}`}>
+                      {available[item.id] ? `Available here: ${available[item.id]}` : "NISAR has nothing for this here yet"}
+                    </span>
+                  ) : null}
                 </button>
                 {open ? (
                   <div className="border-t border-line p-3.5">

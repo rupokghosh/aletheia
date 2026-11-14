@@ -96,7 +96,10 @@ export interface InvestigationState {
 
 export interface GibsState {
   enabled: boolean;
+  /** the last day shown */
   date: string;
+  /** how many days up to `date` are stacked: 12 covers the planet once, 1 shows a single day's passes */
+  days: number;
   opacity: number;
 }
 
@@ -156,8 +159,12 @@ const IDLE_RUN: RunState = { status: "idle", kind: null, description: "", starte
 const EMPTY_SELECTION: Selection = { stackKey: null, before: null, after: null, pairId: null };
 const NO_COVERAGE: CoverageState = { status: "idle", key: null, data: null, source: null, error: null };
 
-function twoDaysAgo(): string {
-  return new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
+/**
+ * The last day of the radar picture shown at the start. NASA's daily pictures keep filling in for about
+ * two weeks after a pass, so the most recent complete 12-day sweep of the planet ends two weeks back.
+ */
+function latestCompleteDay(): string {
+  return new Date(Date.now() - 14 * 86_400_000).toISOString().slice(0, 10);
 }
 
 function initialState(): AppState {
@@ -176,7 +183,7 @@ function initialState(): AppState {
     displays: {},
     activeResultId: null,
     investigation: null,
-    gibs: { enabled: false, date: twoDaysAgo(), opacity: 0.85 },
+    gibs: { enabled: true, date: latestCompleteDay(), days: 12, opacity: 0.85 },
     flyTo: null,
   };
 }

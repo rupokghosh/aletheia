@@ -3,6 +3,7 @@
 import type { Map as MapLibreMap, RasterTileSource } from "maplibre-gl";
 import { useEffect } from "react";
 import { GIBS } from "@/lib/config";
+import { dayNumber, isoFromDayNumber } from "@/lib/format";
 import type { GibsState } from "@/lib/store";
 import { CONTEXT_ANCHOR, isAlive } from "./anchors";
 
@@ -26,35 +27,57 @@ function tileUrl(date: string): string {
   return `${GIBS.wmsUrl}?${params.toString()}&BBOX={bbox-epsg-3857}`;
 }
 
-/** NASA GIBS quick-look imagery as an optional raster layer, under the result layers and the labels. */
+/** The days on show, oldest first, so the most recent pass is drawn on top. */
+function daysShown(date: string, days: number): string[] {
+  const last = dayNumber(date);
+  return Array.from({ length: days }, (_, i) => isoFromDayNumber(last - (days - 1 - i))).filter((d) => d >= GIBS.firstDate);
+}
+
+/**
+ * NASA GIBS quick-look imagery as an optional raster layer, under the result layers and the labels.
+ * NISAR images a few strips of the planet each day and returns to every place after 12 days, so the
+ * default view stacks the last 12 daily pictures into one that covers the whole Earth.
+ */
 export function useGibsLayer(map: MapLibreMap | null, gibs: GibsState): void {
-  const { enabled, date, opacity } = gibs;
+  const { enabled, date, days, opacity } = gibs;
 
   useEffect(() => {
     if (!map || !enabled) return;
-    map.addSource(ID, {
-      type: "raster",
-      tiles: [tileUrl(date)],
-      tileSize: 512,
-      minzoom: 1,
-      maxzoom: 12,
-      attribution: "Quick-look imagery: NASA GIBS / ESDIS",
+    const shown = daysShown(date, days);
+    shown.forEach((day, index) => {
+      map.addSource(`${ID}-${index}`, {
+        type: "raster",
+        tiles: [tileUrl(day)],
+        tileSize: 512,
+        minzoom: 1,
+        maxzoom: 12,
+        attribution: index === 0 ? "Radar picture: NASA GIBS / ESDIS" : undefined,
+      });
+      map.addLayer(
+        { id: `${ID}-${index}`, type: "raster", source: `${ID}-${index}`, paint: { "raster-opacity": opacity, "raster-fade-duration": 0 } },
+        CONTEXT_ANCHOR,
+      );
     });
-    map.addLayer({ id: ID, type: "raster", source: ID, paint: { "raster-opacity": opacity } }, CONTEXT_ANCHOR);
     return () => {
       if (!isAlive(map)) return;
-      if (map.getLayer(ID)) map.removeLayer(ID);
-      if (map.getSource(ID)) map.removeSource(ID);
+      shown.forEach((_, index) => {
+        if (map.getLayer(`${ID}-${index}`)) map.removeLayer(`${ID}-${index}`);
+        if (map.getSource(`${ID}-${index}`)) map.removeSource(`${ID}-${index}`);
+      });
     };
     // Date and opacity changes are applied in place by the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, enabled]);
+  }, [map, enabled, days]);
 
   useEffect(() => {
-    if (map && enabled) map.getSource<RasterTileSource>(ID)?.setTiles([tileUrl(date)]);
-  }, [map, enabled, date]);
+    if (!map || !enabled) return;
+    daysShown(date, days).forEach((day, index) => map.getSource<RasterTileSource>(`${ID}-${index}`)?.setTiles([tileUrl(day)]));
+  }, [map, enabled, date, days]);
 
   useEffect(() => {
-    if (map && enabled && map.getLayer(ID)) map.setPaintProperty(ID, "raster-opacity", opacity);
-  }, [map, enabled, opacity]);
+    if (!map || !enabled) return;
+    for (let index = 0; index < days; index += 1) {
+      if (map.getLayer(`${ID}-${index}`)) map.setPaintProperty(`${ID}-${index}`, "raster-opacity", opacity);
+    }
+  }, [map, enabled, days, opacity]);
 }

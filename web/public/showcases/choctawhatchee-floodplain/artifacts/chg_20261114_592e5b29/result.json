@@ -1,0 +1,828 @@
+{
+  "id": "chg_20261114_592e5b29",
+  "workflow": "change",
+  "status": "ok",
+  "request": {
+    "bbox": [
+      -86.08,
+      30.37,
+      -85.84,
+      30.49
+    ],
+    "date_before": "2026-09-27",
+    "date_after": "2026-10-21",
+    "track": 127,
+    "polarization": "auto"
+  },
+  "summary": {
+    "headline": "Radar brightness rose over 0.1 to 32.4 km2 and fell over 0.00 to 0.50 km2 of the 313 km2 area between 27 September and 21 October 2026.",
+    "metrics": [
+      {
+        "key": "increased_area_km2",
+        "label": "Area where radar brightness rose (HH)",
+        "unit": "km2",
+        "central": 2.48,
+        "low": 0.05,
+        "high": 32.37
+      },
+      {
+        "key": "decreased_area_km2",
+        "label": "Area where radar brightness fell (HH)",
+        "unit": "km2",
+        "central": 0.08,
+        "low": 0.0,
+        "high": 0.5
+      },
+      {
+        "key": "analysed_area_km2",
+        "label": "Area analysed",
+        "unit": "km2",
+        "central": 313.39,
+        "low": null,
+        "high": null
+      },
+      {
+        "key": "cannot_tell_percent",
+        "label": "Share of the area at the noise floor on both dates (HH)",
+        "unit": "%",
+        "central": 0.0,
+        "low": null,
+        "high": null
+      },
+      {
+        "key": "increase_median_change_db",
+        "label": "Typical (median) change where it rose",
+        "unit": "dB",
+        "central": 3.75,
+        "low": null,
+        "high": null
+      },
+      {
+        "key": "decrease_median_change_db",
+        "label": "Typical (median) change where it fell",
+        "unit": "dB",
+        "central": -3.79,
+        "low": null,
+        "high": null
+      },
+      {
+        "key": "scene_shift_db",
+        "label": "Scene-wide shift removed before comparing",
+        "unit": "dB",
+        "central": 0.23,
+        "low": null,
+        "high": null
+      },
+      {
+        "key": "increased_area_km2_hv",
+        "label": "Area where radar brightness rose (HV)",
+        "unit": "km2",
+        "central": 0.02,
+        "low": 0.0,
+        "high": 0.02
+      },
+      {
+        "key": "decreased_area_km2_hv",
+        "label": "Area where radar brightness fell (HV)",
+        "unit": "km2",
+        "central": 0.38,
+        "low": 0.26,
+        "high": 0.38
+      }
+    ]
+  },
+  "layers": [
+    {
+      "id": "before",
+      "title": "HH before, 27 September 2026 (dB)",
+      "kind": "image",
+      "url": "/api/artifacts/chg_20261114_592e5b29/before.png",
+      "corners": [
+        [
+          -86.080029,
+          30.491958
+        ],
+        [
+          -85.838534,
+          30.49003
+        ],
+        [
+          -85.839978,
+          30.368051
+        ],
+        [
+          -86.081173,
+          30.369969
+        ]
+      ],
+      "legend": {
+        "type": "continuous",
+        "unit": "dB",
+        "min": -9.5,
+        "max": 2.0,
+        "colormap": "grey",
+        "classes": [],
+        "min_label": null,
+        "max_label": null
+      },
+      "default_visible": false,
+      "date": "2026-09-27",
+      "description": null,
+      "technical_title": null,
+      "group": "main"
+    },
+    {
+      "id": "after",
+      "title": "HH after, 21 October 2026 (dB)",
+      "kind": "image",
+      "url": "/api/artifacts/chg_20261114_592e5b29/after.png",
+      "corners": [
+        [
+          -86.080029,
+          30.491958
+        ],
+        [
+          -85.838534,
+          30.49003
+        ],
+        [
+          -85.839978,
+          30.368051
+        ],
+        [
+          -86.081173,
+          30.369969
+        ]
+      ],
+      "legend": {
+        "type": "continuous",
+        "unit": "dB",
+        "min": -9.5,
+        "max": 2.0,
+        "colormap": "grey",
+        "classes": [],
+        "min_label": null,
+        "max_label": null
+      },
+      "default_visible": false,
+      "date": "2026-10-21",
+      "description": null,
+      "technical_title": null,
+      "group": "main"
+    },
+    {
+      "id": "change_db",
+      "title": "HH change, after minus before (dB)",
+      "kind": "image",
+      "url": "/api/artifacts/chg_20261114_592e5b29/change_db.png",
+      "corners": [
+        [
+          -86.080029,
+          30.491958
+        ],
+        [
+          -85.838534,
+          30.49003
+        ],
+        [
+          -85.839978,
+          30.368051
+        ],
+        [
+          -86.081173,
+          30.369969
+        ]
+      ],
+      "legend": {
+        "type": "continuous",
+        "unit": "dB",
+        "min": -7.0,
+        "max": 7.0,
+        "colormap": "RdBu",
+        "classes": [],
+        "min_label": null,
+        "max_label": null
+      },
+      "default_visible": true,
+      "date": null,
+      "description": null,
+      "technical_title": null,
+      "group": "main"
+    },
+    {
+      "id": "change_classes",
+      "title": "HH change classes (central threshold)",
+      "kind": "image",
+      "url": "/api/artifacts/chg_20261114_592e5b29/change_classes.png",
+      "corners": [
+        [
+          -86.080029,
+          30.491958
+        ],
+        [
+          -85.838534,
+          30.49003
+        ],
+        [
+          -85.839978,
+          30.368051
+        ],
+        [
+          -86.081173,
+          30.369969
+        ]
+      ],
+      "legend": {
+        "type": "categorical",
+        "unit": "",
+        "min": null,
+        "max": null,
+        "colormap": null,
+        "classes": [
+          {
+            "label": "Brighter by at least 3.0 dB",
+            "color": "#b2182b"
+          },
+          {
+            "label": "Darker by at least 3.0 dB",
+            "color": "#2166ac"
+          },
+          {
+            "label": "At the noise floor on both dates (cannot tell)",
+            "color": "#808080"
+          }
+        ],
+        "min_label": null,
+        "max_label": null
+      },
+      "default_visible": false,
+      "date": null,
+      "description": null,
+      "technical_title": null,
+      "group": "main"
+    },
+    {
+      "id": "before_hv",
+      "title": "HV before, 27 September 2026 (dB)",
+      "kind": "image",
+      "url": "/api/artifacts/chg_20261114_592e5b29/before_hv.png",
+      "corners": [
+        [
+          -86.080029,
+          30.491958
+        ],
+        [
+          -85.838534,
+          30.49003
+        ],
+        [
+          -85.839978,
+          30.368051
+        ],
+        [
+          -86.081173,
+          30.369969
+        ]
+      ],
+      "legend": {
+        "type": "continuous",
+        "unit": "dB",
+        "min": -16.5,
+        "max": -7.5,
+        "colormap": "grey",
+        "classes": [],
+        "min_label": null,
+        "max_label": null
+      },
+      "default_visible": false,
+      "date": "2026-09-27",
+      "description": null,
+      "technical_title": null,
+      "group": "main"
+    },
+    {
+      "id": "after_hv",
+      "title": "HV after, 21 October 2026 (dB)",
+      "kind": "image",
+      "url": "/api/artifacts/chg_20261114_592e5b29/after_hv.png",
+      "corners": [
+        [
+          -86.080029,
+          30.491958
+        ],
+        [
+          -85.838534,
+          30.49003
+        ],
+        [
+          -85.839978,
+          30.368051
+        ],
+        [
+          -86.081173,
+          30.369969
+        ]
+      ],
+      "legend": {
+        "type": "continuous",
+        "unit": "dB",
+        "min": -16.5,
+        "max": -7.5,
+        "colormap": "grey",
+        "classes": [],
+        "min_label": null,
+        "max_label": null
+      },
+      "default_visible": false,
+      "date": "2026-10-21",
+      "description": null,
+      "technical_title": null,
+      "group": "main"
+    },
+    {
+      "id": "change_db_hv",
+      "title": "HV change, after minus before (dB)",
+      "kind": "image",
+      "url": "/api/artifacts/chg_20261114_592e5b29/change_db_hv.png",
+      "corners": [
+        [
+          -86.080029,
+          30.491958
+        ],
+        [
+          -85.838534,
+          30.49003
+        ],
+        [
+          -85.839978,
+          30.368051
+        ],
+        [
+          -86.081173,
+          30.369969
+        ]
+      ],
+      "legend": {
+        "type": "continuous",
+        "unit": "dB",
+        "min": -4.0,
+        "max": 4.0,
+        "colormap": "RdBu",
+        "classes": [],
+        "min_label": null,
+        "max_label": null
+      },
+      "default_visible": false,
+      "date": null,
+      "description": null,
+      "technical_title": null,
+      "group": "main"
+    },
+    {
+      "id": "change_classes_hv",
+      "title": "HV change classes (central threshold)",
+      "kind": "image",
+      "url": "/api/artifacts/chg_20261114_592e5b29/change_classes_hv.png",
+      "corners": [
+        [
+          -86.080029,
+          30.491958
+        ],
+        [
+          -85.838534,
+          30.49003
+        ],
+        [
+          -85.839978,
+          30.368051
+        ],
+        [
+          -86.081173,
+          30.369969
+        ]
+      ],
+      "legend": {
+        "type": "categorical",
+        "unit": "",
+        "min": null,
+        "max": null,
+        "colormap": null,
+        "classes": [
+          {
+            "label": "Brighter by at least 2.0 dB",
+            "color": "#b2182b"
+          },
+          {
+            "label": "Darker by at least 2.0 dB",
+            "color": "#2166ac"
+          },
+          {
+            "label": "At the noise floor on both dates (cannot tell)",
+            "color": "#808080"
+          }
+        ],
+        "min_label": null,
+        "max_label": null
+      },
+      "default_visible": false,
+      "date": null,
+      "description": null,
+      "technical_title": null,
+      "group": "main"
+    }
+  ],
+  "series": [],
+  "stats": {
+    "primary_polarization": "HH",
+    "stack": {
+      "track": 127,
+      "direction": "descending",
+      "frame": 73
+    },
+    "window": {
+      "shape": [
+        1352,
+        2318
+      ],
+      "pixel_size_m": [
+        10.0,
+        10.0
+      ],
+      "epsg": 32616,
+      "multilook": 9,
+      "analysed_area_km2": 313.39,
+      "valid_fraction": 1.0
+    },
+    "polarizations": {
+      "HH": {
+        "mean_db_before": -3.62,
+        "mean_db_after": -2.53,
+        "scene_shift_db": 0.23,
+        "sigma_db": 1.01,
+        "thresholds_db": {
+          "lenient": 2.02,
+          "central": 3.04,
+          "strict": 4.05
+        },
+        "noise_floor_db": {
+          "before": -15.0,
+          "after": -15.0
+        },
+        "noise_floor_fraction": {
+          "before": 0.002,
+          "after": 0.0,
+          "both": 0.0
+        },
+        "informative": true,
+        "increased": {
+          "area_km2": {
+            "low": 0.05,
+            "central": 2.48,
+            "high": 32.37
+          },
+          "mean_db_before": -3.29,
+          "mean_db_after": 0.89,
+          "median_change_db": 3.75
+        },
+        "decreased": {
+          "area_km2": {
+            "low": 0.0,
+            "central": 0.08,
+            "high": 0.5
+          },
+          "mean_db_before": -4.02,
+          "mean_db_after": -7.85,
+          "median_change_db": -3.79
+        }
+      },
+      "HV": {
+        "mean_db_before": -9.97,
+        "mean_db_after": -10.01,
+        "scene_shift_db": -0.1,
+        "sigma_db": 0.58,
+        "thresholds_db": {
+          "lenient": 2.0,
+          "central": 2.0,
+          "strict": 2.34
+        },
+        "noise_floor_db": {
+          "before": -20.0,
+          "after": -20.0
+        },
+        "noise_floor_fraction": {
+          "before": 0.005,
+          "after": 0.002,
+          "both": 0.002
+        },
+        "informative": true,
+        "increased": {
+          "area_km2": {
+            "low": 0.0,
+            "central": 0.02,
+            "high": 0.02
+          },
+          "mean_db_before": -20.7,
+          "mean_db_after": -17.88,
+          "median_change_db": 2.72
+        },
+        "decreased": {
+          "area_km2": {
+            "low": 0.26,
+            "central": 0.38,
+            "high": 0.38
+          },
+          "mean_db_before": -10.24,
+          "mean_db_after": -14.14,
+          "median_change_db": -3.26
+        }
+      }
+    }
+  },
+  "uncertainty": {
+    "method": "Per-pixel change in dB (after minus before) after 9x9 multilook in linear power, minus the median change of all measurable pixels (+0.23 dB for HH). The no-change spread sigma (1.01 dB) is 1.4826 x the median absolute deviation of the change. A pixel counts as changed when its change is at least k x sigma and at least 2 dB, for k = 2, 3 and 4; patches that cannot hold a disk 11 pixels across are removed. Pixels within 1.5 dB of the estimated noise floor on both dates are excluded as 'cannot tell'.",
+    "sensitivity": [
+      {
+        "parameter": "increase: strict threshold (dB)",
+        "value": 4.05,
+        "result": 0.05,
+        "unit": "km2"
+      },
+      {
+        "parameter": "decrease: strict threshold (dB)",
+        "value": 4.05,
+        "result": 0.0,
+        "unit": "km2"
+      },
+      {
+        "parameter": "increase: central threshold (dB)",
+        "value": 3.04,
+        "result": 2.48,
+        "unit": "km2"
+      },
+      {
+        "parameter": "decrease: central threshold (dB)",
+        "value": 3.04,
+        "result": 0.08,
+        "unit": "km2"
+      },
+      {
+        "parameter": "increase: lenient threshold (dB)",
+        "value": 2.02,
+        "result": 32.37,
+        "unit": "km2"
+      },
+      {
+        "parameter": "decrease: lenient threshold (dB)",
+        "value": 2.02,
+        "result": 0.5,
+        "unit": "km2"
+      },
+      {
+        "parameter": "increase: scene shift",
+        "value": "not subtracted",
+        "result": 5.16,
+        "unit": "km2"
+      },
+      {
+        "parameter": "decrease: scene shift",
+        "value": "not subtracted",
+        "result": 0.03,
+        "unit": "km2"
+      },
+      {
+        "parameter": "increase: multilook box (pixels)",
+        "value": 5.0,
+        "result": 0.24,
+        "unit": "km2"
+      },
+      {
+        "parameter": "decrease: multilook box (pixels)",
+        "value": 5.0,
+        "result": 0.01,
+        "unit": "km2"
+      },
+      {
+        "parameter": "increase: multilook box (pixels)",
+        "value": 13.0,
+        "result": 11.04,
+        "unit": "km2"
+      },
+      {
+        "parameter": "decrease: multilook box (pixels)",
+        "value": 13.0,
+        "result": 0.09,
+        "unit": "km2"
+      },
+      {
+        "parameter": "increase: speck removal",
+        "value": "off",
+        "result": 11.45,
+        "unit": "km2"
+      },
+      {
+        "parameter": "decrease: speck removal",
+        "value": "off",
+        "result": 0.22,
+        "unit": "km2"
+      }
+    ],
+    "noise_floor_fraction": 0.0,
+    "notes": [
+      "Each area is a range, not one value: low uses the strict threshold (4 sigma), central 3 sigma and high the lenient one (2 sigma). The sensitivity list shows how other processing choices move the central value.",
+      "HH: 0% of the area is at or below the noise floor on 2026-09-27, 0% on 2026-10-21 and 0% on both.",
+      "HV: 1% of the area is at or below the noise floor on 2026-09-27, 0% on 2026-10-21 and 0% on both.",
+      "The noise floor is estimated from the darkest part of each image, not from the instrument's noise record. Pixels at the floor on only one date are kept; their change is a lower bound.",
+      "Changed patches narrower than about 110 m are not counted, so thin features such as narrow channels or roads are under-represented."
+    ]
+  },
+  "caveats": [
+    {
+      "code": "tier_provisional",
+      "text": "2026-09-27 and 2026-10-21 are provisional-tier (calibrated, but values may change after reprocessing)."
+    },
+    {
+      "code": "water_wind",
+      "text": "Wind roughens open water and changes its brightness from one pass to the next. A change over water is not by itself a change of the surface."
+    },
+    {
+      "code": "terrain",
+      "text": "On steep slopes the radar image is distorted (layover) or blind (shadow); changes there are unreliable."
+    },
+    {
+      "code": "not_land_cover",
+      "text": "A change in radar brightness means the surface scatters the signal differently (water level, moisture, roughness, vegetation, structures). It is not by itself a land-cover label."
+    }
+  ],
+  "receipt": {
+    "granules": [
+      {
+        "granule_id": "NISAR_L2_PR_GCOV_031_127_D_073_4005_DHDH_A_20260927T002830_20260927T002905_P05023_N_F_J_001",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_031_127_D_073_4005_DHDH_A_20260927T002830_20260927T002905_P05023_N_F_J_001/NISAR_L2_PR_GCOV_031_127_D_073_4005_DHDH_A_20260927T002830_20260927T002905_P05023_N_F_J_001.h5",
+        "tier": "provisional",
+        "product": "GCOV",
+        "date": "2026-09-27",
+        "reference_date": null,
+        "secondary_date": null,
+        "track": 127,
+        "frame": 73,
+        "direction": "descending",
+        "polarizations": [
+          "HH",
+          "HV"
+        ]
+      },
+      {
+        "granule_id": "NISAR_L2_PR_GCOV_033_127_D_073_4005_DHDH_A_20261021T002830_20261021T002905_P05023_N_F_J_001",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_033_127_D_073_4005_DHDH_A_20261021T002830_20261021T002905_P05023_N_F_J_001/NISAR_L2_PR_GCOV_033_127_D_073_4005_DHDH_A_20261021T002830_20261021T002905_P05023_N_F_J_001.h5",
+        "tier": "provisional",
+        "product": "GCOV",
+        "date": "2026-10-21",
+        "reference_date": null,
+        "secondary_date": null,
+        "track": 127,
+        "frame": 73,
+        "direction": "descending",
+        "polarizations": [
+          "HH",
+          "HV"
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "name": "search_catalog",
+        "params": {
+          "product": "GCOV",
+          "bbox": [
+            -86.08,
+            30.37,
+            -85.84,
+            30.49
+          ],
+          "granules_found": 34
+        },
+        "seconds": 0.27
+      },
+      {
+        "name": "select_stack",
+        "params": {
+          "track": 127,
+          "direction": "descending",
+          "frame": 73,
+          "other_tracks_with_both_dates": []
+        },
+        "seconds": null
+      },
+      {
+        "name": "read_windows",
+        "params": {
+          "polarizations": [
+            "HH",
+            "HV"
+          ],
+          "rows": [
+            19322,
+            20674
+          ],
+          "cols": [
+            14189,
+            16507
+          ],
+          "epsg": 32616,
+          "megabytes_transferred": 276.8,
+          "from_cache": [
+            false,
+            false
+          ]
+        },
+        "seconds": 12.0
+      },
+      {
+        "name": "detect_change",
+        "params": {
+          "multilook": 9,
+          "sigma_estimator": "1.4826 x median absolute deviation of the change",
+          "k_sigma": {
+            "lenient": 2.0,
+            "central": 3.0,
+            "strict": 4.0
+          },
+          "minimum_change_db": 2.0,
+          "speck_removal": "binary opening with a disk 11 pixels across",
+          "noise_margin_db": 1.5
+        },
+        "seconds": 2.1
+      },
+      {
+        "name": "write_artifacts",
+        "params": {
+          "formats": [
+            "PNG",
+            "GeoTIFF",
+            "CSV",
+            "JSON"
+          ],
+          "polarizations": [
+            "HH",
+            "HV"
+          ]
+        },
+        "seconds": 2.09
+      }
+    ],
+    "software": {
+      "name": "aletheia",
+      "version": "0.1.0",
+      "commit": "fd08ea6"
+    },
+    "generated_at": "2026-11-14T23:13:06Z",
+    "reproduce": "# Needs: pip install -e backend/  and an Earthdata Login in ~/.netrc (or EARTHDATA_TOKEN).\n# Reads the best calibration tier available when it runs. This result used:\n#   NISAR_L2_PR_GCOV_031_127_D_073_4005_DHDH_A_20260927T002830_20260927T002905_P05023_N_F_J_001 (provisional)\n#   NISAR_L2_PR_GCOV_033_127_D_073_4005_DHDH_A_20261021T002830_20261021T002905_P05023_N_F_J_001 (provisional)\nfrom nisar_investigator.schemas import ChangeRequest\nfrom nisar_investigator.workflows.change import run_change\n\nif __name__ == \"__main__\":  # required: the reader starts worker processes\n    result = run_change(ChangeRequest(\n        bbox=(-86.08, 30.37, -85.84, 30.49), date_before=\"2026-09-27\", date_after=\"2026-10-21\", track=127, polarization=\"HH\",\n    ))\n    print(result.summary.headline)\n    for m in result.summary.metrics:\n        print(m.key, m.low, m.central, m.high, m.unit)\n"
+  },
+  "downloads": [
+    {
+      "label": "HH before, 2026-09-27 (dB, GeoTIFF)",
+      "url": "/api/artifacts/chg_20261114_592e5b29/before_db.tif",
+      "format": "geotiff"
+    },
+    {
+      "label": "HH after, 2026-10-21 (dB, GeoTIFF)",
+      "url": "/api/artifacts/chg_20261114_592e5b29/after_db.tif",
+      "format": "geotiff"
+    },
+    {
+      "label": "HH change, scene shift removed (dB, GeoTIFF)",
+      "url": "/api/artifacts/chg_20261114_592e5b29/change_db.tif",
+      "format": "geotiff"
+    },
+    {
+      "label": "HV before, 2026-09-27 (dB, GeoTIFF)",
+      "url": "/api/artifacts/chg_20261114_592e5b29/before_db_hv.tif",
+      "format": "geotiff"
+    },
+    {
+      "label": "HV after, 2026-10-21 (dB, GeoTIFF)",
+      "url": "/api/artifacts/chg_20261114_592e5b29/after_db_hv.tif",
+      "format": "geotiff"
+    },
+    {
+      "label": "HV change, scene shift removed (dB, GeoTIFF)",
+      "url": "/api/artifacts/chg_20261114_592e5b29/change_db_hv.tif",
+      "format": "geotiff"
+    },
+    {
+      "label": "Change map (PNG)",
+      "url": "/api/artifacts/chg_20261114_592e5b29/change_db.png",
+      "format": "png"
+    },
+    {
+      "label": "Statistics (CSV)",
+      "url": "/api/artifacts/chg_20261114_592e5b29/statistics.csv",
+      "format": "csv"
+    },
+    {
+      "label": "Full result with receipt (JSON)",
+      "url": "/api/artifacts/chg_20261114_592e5b29/result.json",
+      "format": "json"
+    }
+  ]
+}
