@@ -223,6 +223,13 @@ def _change_reading(result: dict, lon: float, lat: float) -> dict:
                       else ["vegetation removed or burned", "drying soil", "flood water draining from under vegetation"])
     readings[2]["note"] = verdict
     sentence = f"Between {day0} and {day1} this spot went from {before:.1f} to {after:.1f} dB: {verdict}."
+    shift = stats.get("scene_shift_db") or 0.0
+    if abs(shift) >= 0.1 and not dark_both:
+        # the change value has the scene-wide shift taken out, so it differs from "after minus before"
+        sentence += (
+            f" (The whole scene shifted by {shift:+.1f} dB between the two dates; that is taken out of the "
+            "change, which is why it is not exactly the difference of the two values.)"
+        )
     out = {"readings": readings, "sentence": sentence}
     if causes:
         out["common_causes"] = causes

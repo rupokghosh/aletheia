@@ -204,23 +204,37 @@ _STEP_TITLES = {
 
 
 def _coverage_digest(cov) -> dict:
-    """What the model needs from a Coverage object: per-stack dates with tiers, without footprints or URLs."""
+    """What the model needs from a Coverage object: per-stack dates with tiers, without footprints or URLs.
+
+    Stacks whose footprint covers under half of the area are left out (they only clip its edge and have
+    no usable samples), and the rest are listed best first: the most acquisitions on top.
+    """
+    from .workflows import common
+
+    bbox = tuple(cov.query["bbox"]) if "bbox" in cov.query else None
     stacks: dict[tuple, dict] = {}
+    skipped = 0
     for product, granules in cov.products.items():
         for g in granules:
             key = (product, g.track, g.direction, g.frame)
-            entry = stacks.setdefault(
-                key,
-                {"product": product, "track": g.track, "direction": g.direction, "frame": g.frame,
-                 "polarizations": g.polarizations, "acquisitions": []},
-            )
+            if key not in stacks:
+                share = common.footprint_fraction(g.footprint, bbox) if bbox and g.footprint else 1.0
+                stacks[key] = {"product": product, "track": g.track, "direction": g.direction, "frame": g.frame,
+                               "polarizations": g.polarizations, "covers_area": share >= 0.5, "acquisitions": []}
+            entry = stacks[key]
             if g.date:
                 entry["acquisitions"].append({"date": g.date, "tier": g.tier})
             else:
                 entry["acquisitions"].append(
                     {"reference_date": g.reference_date, "secondary_date": g.secondary_date, "tier": g.tier}
                 )
-    return {"id": "coverage", "stacks": list(stacks.values()), "notes": cov.notes}
+    usable = [s for s in stacks.values() if s.pop("covers_area")]
+    skipped = len(stacks) - len(usable)
+    usable.sort(key=lambda s: (s["product"] != "GCOV", -len(s["acquisitions"])))
+    notes = list(cov.notes)
+    if skipped:
+        notes.append(f"{skipped} other stacks only clip the edge of the area and are not listed.")
+    return {"id": "coverage", "stacks": usable, "notes": notes}
 
 
 def _result_digest(result: dict) -> dict:
