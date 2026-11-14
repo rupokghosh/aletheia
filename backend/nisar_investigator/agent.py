@@ -9,9 +9,11 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Iterator
+from dataclasses import dataclass
 from datetime import date
 
 import anthropic
+import requests
 
 from . import catalog, config, context, provenance
 from .schemas import (
@@ -295,6 +297,7 @@ class _Session:
         self.steps: list[InvestigationStep] = []
         self.report: Report | None = None
         self.report_attempts = 0
+        self.model: str | None = None
 
     # each tool returns (digest_for_model, full_result_for_interface, detail_line)
     def check_coverage(self, _: dict):
@@ -373,7 +376,7 @@ class _Session:
     def investigation(self) -> Investigation:
         return Investigation(
             id=self.id, question=self.req.question, place_name=self.req.place_name, bbox=self.req.bbox,
-            steps=self.steps, results=self.results, report=self.report,
+            steps=self.steps, results=self.results, report=self.report, model=self.model,
         )
 
 
@@ -387,25 +390,49 @@ def _user_prompt(req: InvestigateRequest) -> str:
     )
 
 
-def investigate(req: InvestigateRequest) -> Iterator[dict]:
-    """Run one investigation, yielding events: step, tool_call, tool_result, done, error."""
-    session = _Session(req)
-    try:
-        client = anthropic.Anthropic()
-    except anthropic.AnthropicError:
-        yield _event("error", message="The investigator needs a Claude API key on the server (ANTHROPIC_API_KEY).")
-        return
-    messages: list[dict] = [{"role": "user", "content": _user_prompt(req)}]
-    nudged = False
+# ----------------------------------------------------------------- backends
+#
+# The loop below is the same for every language model. A backend owns the provider-specific message
+# history and turns one request into a list of tool calls.
 
-    for _ in range(MAX_TURNS):
+
+class ModelError(RuntimeError):
+    """A language-model failure, with a message that is safe to show to the user."""
+
+
+@dataclass
+class _Call:
+    id: str
+    name: str
+    input: dict
+    error: str | None = None  # set when the model's arguments could not be parsed
+
+
+@dataclass
+class _Turn:
+    calls: list[_Call]
+    pause: bool = False  # the provider paused a long turn; send the same history again
+
+
+class _AnthropicBackend:
+    """Claude through the Anthropic API."""
+
+    def __init__(self, user_prompt: str):
         try:
-            response = client.beta.messages.create(
+            self.client = anthropic.Anthropic()
+        except anthropic.AnthropicError:
+            raise ModelError("The investigator needs a Claude API key on the server (ANTHROPIC_API_KEY).") from None
+        self.messages: list[dict] = [{"role": "user", "content": user_prompt}]
+        self.label = f"{config.AGENT_MODEL} (Anthropic API)"
+
+    def turn(self) -> _Turn:
+        try:
+            response = self.client.beta.messages.create(
                 model=config.AGENT_MODEL,
                 max_tokens=16000,
                 system=SYSTEM_PROMPT,
                 tools=TOOLS,
-                messages=messages,
+                messages=self.messages,
                 thinking={"type": "adaptive"},
                 output_config={"effort": config.AGENT_EFFORT},
                 cache_control={"type": "ephemeral"},
@@ -413,65 +440,247 @@ def investigate(req: InvestigateRequest) -> Iterator[dict]:
                 fallbacks="default",
             )
         except anthropic.AuthenticationError:
-            yield _event("error", message="The Claude API key on the server is missing or invalid.")
-            return
+            raise ModelError("The Claude API key on the server is missing or invalid.") from None
         except anthropic.RateLimitError:
-            yield _event("error", message="The language model is rate limited right now. Try again in a minute.")
-            return
+            raise ModelError("The language model is rate limited right now. Try again in a minute.") from None
         except anthropic.APIStatusError as exc:
-            yield _event("error", message=f"The language model returned an error (HTTP {exc.status_code}).")
-            return
+            raise ModelError(f"The language model returned an error (HTTP {exc.status_code}).") from None
         except anthropic.APIConnectionError:
-            yield _event("error", message="Could not reach the language model. Check the server's network.")
-            return
+            raise ModelError("Could not reach the language model. Check the server's network.") from None
         except anthropic.AnthropicError:
-            yield _event("error", message="The investigator needs a Claude API key on the server (ANTHROPIC_API_KEY).")
-            return
+            raise ModelError("The investigator needs a Claude API key on the server (ANTHROPIC_API_KEY).") from None
 
         if response.stop_reason == "refusal":
-            yield _event("error", message="The language model declined this question.")
-            return
+            raise ModelError("The language model declined this question.")
         if response.stop_reason == "max_tokens":
-            yield _event("error", message="The language model ran out of room before finishing. Try a narrower question.")
-            return
-
-        messages.append({"role": "assistant", "content": response.content})
+            raise ModelError("The language model ran out of room before finishing. Try a narrower question.")
+        self.messages.append({"role": "assistant", "content": response.content})
         if response.stop_reason == "pause_turn":
-            continue
+            return _Turn(calls=[], pause=True)
+        return _Turn(calls=[_Call(b.id, b.name, dict(b.input)) for b in response.content if b.type == "tool_use"])
 
-        calls = [b for b in response.content if b.type == "tool_use"]
-        if not calls:
+    def add_results(self, results: list[tuple[_Call, str, bool]]) -> None:
+        self.messages.append(
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "tool_use_id": call.id, "content": content, "is_error": is_error}
+                    for call, content, is_error in results
+                ],
+            }
+        )
+
+    def nudge(self, text: str) -> None:
+        self.messages.append({"role": "user", "content": text})
+
+
+def _relaxed(schema: dict) -> dict:
+    """Tool schema for servers without strict mode: nullable fields become optional plain types."""
+    props, required = {}, []
+    for name, spec in schema["properties"].items():
+        spec = dict(spec)
+        if isinstance(spec.get("type"), list):
+            spec["type"] = next(t for t in spec["type"] if t != "null")
+        else:
+            required.append(name)
+        props[name] = spec
+    return {"type": "object", "properties": props, "required": required}
+
+
+_FUNCTION_TOOLS = [
+    {"type": "function", "function": {"name": t["name"], "description": t["description"], "parameters": _relaxed(t["input_schema"])}}
+    for t in TOOLS
+]
+_THINK = re.compile(r"<think>.*?</think>", re.DOTALL)
+
+
+class _ChatBackend:
+    """Open-weight models: Ollama on this machine (native API), or any OpenAI-compatible endpoint."""
+
+    def __init__(self, user_prompt: str, flavor: str):
+        self.flavor = flavor  # "ollama" or "openai"
+        self.model = config.LLM_MODEL
+        self.messages: list[dict] = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ]
+        where = "local, Ollama" if flavor == "ollama" else "OpenAI-compatible endpoint"
+        self.label = f"{self.model} ({where})"
+        self._n = 0
+
+    def _post(self) -> dict:
+        if self.flavor == "ollama":
+            url = f"{config.OLLAMA_HOST}/api/chat"
+            payload = {
+                "model": self.model, "messages": self.messages, "tools": _FUNCTION_TOOLS, "stream": False,
+                # Ollama's default context is small; a truncated tool result would silently drop evidence.
+                "options": {"num_ctx": config.LLM_NUM_CTX, "temperature": 0.2},
+            }
+            headers = {}
+        else:
+            url = f"{config.LLM_BASE_URL.rstrip('/')}/chat/completions"
+            payload = {"model": self.model, "messages": self.messages, "tools": _FUNCTION_TOOLS, "tool_choice": "auto", "temperature": 0.2, "max_tokens": 8000}
+            headers = {"Authorization": f"Bearer {config.LLM_API_KEY}"} if config.LLM_API_KEY else {}
+        try:
+            r = requests.post(url, json=payload, headers=headers, timeout=(10, 600))
+        except requests.ConnectionError:
+            hint = " Is Ollama running? Try `brew services start ollama`." if self.flavor == "ollama" else ""
+            raise ModelError(f"Could not reach the language model server.{hint}") from None
+        except requests.RequestException as exc:
+            raise ModelError(f"The language model request failed ({type(exc).__name__}).") from None
+        if r.status_code == 404 and self.flavor == "ollama":
+            raise ModelError(f"The model {self.model} is not installed in Ollama. Run `ollama pull {self.model}`.")
+        if r.status_code in (401, 403):
+            raise ModelError("The language model server rejected the API key.")
+        if r.status_code >= 400:
+            raise ModelError(f"The language model returned an error (HTTP {r.status_code}).")
+        return r.json()
+
+    def turn(self) -> _Turn:
+        body = self._post()
+        message = body["message"] if self.flavor == "ollama" else body["choices"][0]["message"]
+        raw_calls = message.get("tool_calls") or []
+        calls: list[_Call] = []
+        for raw in raw_calls:
+            fn = raw.get("function", {})
+            args, error = fn.get("arguments"), None
+            if isinstance(args, str):
+                try:
+                    args = json.loads(args or "{}")
+                except json.JSONDecodeError:
+                    args, error = {}, "The arguments were not valid JSON."
+            if not isinstance(args, dict):
+                args, error = {}, "The arguments must be a JSON object."
+            self._n += 1
+            call_id = raw.get("id") or f"call_{self._n}"
+            raw["id"] = call_id  # keep the echoed history consistent with the ids used for results
+            calls.append(_Call(call_id, fn.get("name", ""), args, error))
+        content = _THINK.sub("", message.get("content") or "").strip()
+        echoed = {"role": "assistant", "content": content}
+        if raw_calls:
+            echoed["tool_calls"] = raw_calls
+        self.messages.append(echoed)
+        return _Turn(calls=calls)
+
+    def add_results(self, results: list[tuple[_Call, str, bool]]) -> None:
+        for call, content, is_error in results:
+            text = f"ERROR: {content}" if is_error else content
+            if self.flavor == "ollama":
+                self.messages.append({"role": "tool", "tool_name": call.name, "content": text})
+            else:
+                self.messages.append({"role": "tool", "tool_call_id": call.id, "content": text})
+
+    def nudge(self, text: str) -> None:
+        self.messages.append({"role": "user", "content": text})
+
+
+def _make_backend(user_prompt: str):
+    provider = config.agent_provider()
+    if provider == "anthropic":
+        return _AnthropicBackend(user_prompt)
+    if provider == "openai_compatible":
+        return _ChatBackend(user_prompt, "openai")
+    return _ChatBackend(user_prompt, "ollama")
+
+
+# ------------------------------------------------------------ input checking
+
+_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_SCHEMAS = {t["name"]: t["input_schema"] for t in TOOLS}
+
+
+def _check_input(name: str, data: dict) -> str | None:
+    """Validate a tool call against its schema. Strict mode guarantees this on the Anthropic API; other
+    servers do not, so every call is checked here. Fills missing optional fields with None."""
+    schema = _SCHEMAS.get(name)
+    if schema is None:
+        return f"Unknown tool {name!r}. Available: {', '.join(_SCHEMAS)}."
+    for key, spec in schema["properties"].items():
+        nullable = isinstance(spec.get("type"), list)
+        value = data.get(key)
+        if value is None or value == "":
+            if nullable:
+                data[key] = None
+                continue
+            return f"Missing required field {key!r}."
+        kind = next(t for t in spec["type"] if t != "null") if nullable else spec.get("type")
+        if kind == "integer" and isinstance(value, str) and value.lstrip("-").isdigit():
+            data[key] = value = int(value)
+        if kind == "string" and not isinstance(value, str):
+            return f"Field {key!r} must be a string."
+        if kind == "integer" and not isinstance(value, int):
+            return f"Field {key!r} must be an integer."
+        if kind == "array" and not isinstance(value, list):
+            return f"Field {key!r} must be a list."
+        if "enum" in spec and value not in spec["enum"]:
+            return f"Field {key!r} must be one of {spec['enum']}."
+        if kind == "string" and ("date" in key or key in ("start", "end")) and not _DATE.match(value):
+            return f"Field {key!r} must be a date in YYYY-MM-DD form."
+        if kind == "array" and spec.get("items", {}).get("type") == "object":
+            needed = spec["items"]["required"]
+            for item in value:
+                if not isinstance(item, dict) or any(not isinstance(item.get(k), str) for k in needed):
+                    return f"Each item of {key!r} must be an object with string fields {needed}."
+        if kind == "array" and spec.get("items", {}).get("type") == "string" and any(not isinstance(v, str) for v in value):
+            return f"Each item of {key!r} must be a string."
+    return None
+
+
+# ----------------------------------------------------------------- the loop
+
+
+def investigate(req: InvestigateRequest) -> Iterator[dict]:
+    """Run one investigation, yielding events: step, tool_call, tool_result, done, error."""
+    session = _Session(req)
+    try:
+        backend = _make_backend(_user_prompt(req))
+    except ModelError as exc:
+        yield _event("error", message=str(exc))
+        return
+    session.model = backend.label
+    yield _event("step", title=f"Planning with {backend.label}", status="done")
+    nudged = False
+
+    for _ in range(MAX_TURNS):
+        try:
+            turn = backend.turn()
+        except ModelError as exc:
+            yield _event("error", message=str(exc))
+            break
+        if turn.pause:
+            continue
+        if not turn.calls:
             if session.report is None and not nudged:
                 nudged = True
-                messages.append({"role": "user", "content": "Deliver the result by calling submit_report."})
+                backend.nudge("Deliver the result by calling submit_report.")
                 continue
             break
 
-        tool_results = []
-        for call in calls:
-            title = _STEP_TITLES.get(call.name, call.name)
+        results: list[tuple[_Call, str, bool]] = []
+        for call in turn.calls:
+            title = _STEP_TITLES.get(call.name, call.name or "Unknown step")
             if call.name == "run_change":
                 title = f"Measuring change between {call.input.get('date_before')} and {call.input.get('date_after')}"
+            problem = call.error or _check_input(call.name, call.input)
+            if problem:
+                results.append((call, f"Invalid call to {call.name}: {problem}", True))
+                continue
             yield _event("step", title=title, status="running")
             yield _event("tool_call", name=call.name, input=call.input)
 
             if call.name == "submit_report":
                 ok, message = session.submit_report(call.input)
-                tool_results.append({"type": "tool_result", "tool_use_id": call.id, "content": message, "is_error": not ok})
+                results.append((call, message, not ok))
                 detail = "Report accepted" if ok else "Figures did not match the results; revising"
                 session.steps.append(InvestigationStep(title=title, detail=detail))
                 yield _event("step", title=title, status="done" if ok else "retry", detail=detail)
                 continue
 
-            handler = getattr(session, call.name, None)
-            if handler is None:
-                tool_results.append({"type": "tool_result", "tool_use_id": call.id, "content": f"Unknown tool {call.name}.", "is_error": True})
-                continue
             try:
-                digest, full, detail = handler(call.input)
+                digest, full, detail = getattr(session, call.name)(call.input)
             except Exception as exc:  # noqa: BLE001 - a failed tool is reported to the model and the user, not raised
                 message = f"{type(exc).__name__}: {exc}"[:300]
-                tool_results.append({"type": "tool_result", "tool_use_id": call.id, "content": f"Tool failed: {message}", "is_error": True})
+                results.append((call, f"Tool failed: {message}", True))
                 session.steps.append(InvestigationStep(title=title, detail=f"Failed: {message}"))
                 yield _event("step", title=title, status="failed", detail=message)
                 continue
@@ -479,15 +688,17 @@ def investigate(req: InvestigateRequest) -> Iterator[dict]:
             session.digests[ref] = digest
             session.results[ref] = full
             session.steps.append(InvestigationStep(title=title, detail=detail, result_ref=ref))
-            tool_results.append({"type": "tool_result", "tool_use_id": call.id, "content": json.dumps(digest, default=str)})
+            results.append((call, json.dumps(digest, default=str), False))
             yield _event("tool_result", name=call.name, result_ref=ref, result=full)
             yield _event("step", title=title, status="done", detail=detail, result_ref=ref)
 
-        messages.append({"role": "user", "content": tool_results})
+        backend.add_results(results)
         if session.report is not None:
             break
 
     if session.report is None:
+        if not session.results:
+            return
         yield _event("error", message="The investigation ended without a report. The steps and results above are still valid.")
     investigation = session.investigation()
     path = provenance.artifact_path(session.id, "investigation.json")

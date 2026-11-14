@@ -27,6 +27,23 @@ load_env()
 AGENT_MODEL = os.environ.get("NISAR_AGENT_MODEL", "claude-opus-5-5")
 AGENT_EFFORT = os.environ.get("NISAR_AGENT_EFFORT", "medium")
 
+# Open-weight models, used when no Claude API key is configured (or when NISAR_AGENT_PROVIDER says so).
+LLM_MODEL = os.environ.get("NISAR_LLM_MODEL", "qwen3:14b")
+OLLAMA_HOST = os.environ.get("NISAR_OLLAMA_HOST", "http://localhost:11434")
+LLM_NUM_CTX = int(os.environ.get("NISAR_LLM_NUM_CTX", 32768))
+LLM_BASE_URL = os.environ.get("NISAR_LLM_BASE_URL", "")  # any OpenAI-compatible endpoint, e.g. https://host/v1
+LLM_API_KEY = os.environ.get("NISAR_LLM_API_KEY", "")
+
+
+def agent_provider() -> str:
+    """Which language model plans investigations: 'anthropic', 'openai_compatible' or 'ollama'."""
+    chosen = os.environ.get("NISAR_AGENT_PROVIDER", "auto").lower()
+    if chosen in ("anthropic", "openai_compatible", "ollama"):
+        return chosen
+    if os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"):
+        return "anthropic"
+    return "openai_compatible" if LLM_BASE_URL else "ollama"
+
 
 def cache_dir() -> Path:
     path = Path(os.environ.get("NISAR_CACHE_DIR", BACKEND_DIR / ".cache"))

@@ -232,3 +232,4 @@ class Investigation(BaseModel):
     steps: list[InvestigationStep] = Field(default_factory=list)
     results: dict[str, Any] = Field(default_factory=dict)
     report: Report | None = None
+    model: str | None = None  # which language model planned the steps and wrote the report
