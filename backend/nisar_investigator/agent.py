@@ -30,7 +30,7 @@ MAX_TURNS = 14
 MAX_REPORT_ATTEMPTS = 3
 
 SYSTEM_PROMPT = """\
-You are the analysis planner inside NISAR Investigator, a research tool that answers questions about how \
+You are the analysis planner inside Aletheia, a research tool that answers questions about how \
 Earth's surface is changing, using data from NISAR, the NASA-ISRO L-band radar satellite. The people asking \
 are researchers who are usually not radar specialists: hydrologists, ecologists, geologists, planners, \
 students. They have selected an area on a map and asked a question. They need an answer they can cite, so \

@@ -92,7 +92,7 @@ class Recorder:
         return Receipt(
             granules=self.granules,
             steps=self.steps,
-            software={"name": "nisar-investigator", "version": __version__, "commit": _commit()},
+            software={"name": "aletheia", "version": __version__, "commit": _commit()},
             generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             reproduce=reproduce,
         )

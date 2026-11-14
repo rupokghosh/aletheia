@@ -1,6 +1,9 @@
-# NISAR Investigator (working title)
+# Aletheia
 
 Ask a question about any place on Earth and get a radar-backed answer with receipts.
+
+*Aletheia* is the Greek word for truth understood as un-hiddenness: bringing what is concealed into the open.
+NISAR's radar sees through cloud, darkness and forest canopy; this tool shows what it sees and how it knows.
 
 Built for the NASA Space Apps Challenge 2026, challenge **Dancing with the SARs**.
 

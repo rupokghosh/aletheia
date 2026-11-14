@@ -59,7 +59,7 @@ def _cors_origins() -> list[str]:
 
 
 app = FastAPI(
-    title="NISAR Investigator API",
+    title="Aletheia API",
     version=__version__,
     description="Radar-backed answers from NISAR data, with receipts.",
 )
@@ -112,7 +112,7 @@ async def _unexpected_error(_: Request, exc: Exception) -> JSONResponse:
 async def health() -> dict:
     return {
         "status": "ok",
-        "service": "nisar-investigator",
+        "service": "aletheia",
         "version": __version__,
         "workflows": {
             "change": True,

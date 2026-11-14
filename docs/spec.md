@@ -1,6 +1,6 @@
 # Spec: requirements and contracts
 
-Working title: **NISAR Investigator**. NASA Space Apps Challenge 2026, challenge "Dancing with the SARs".
+Name: **Aletheia** (Greek: truth as un-hiddenness). NASA Space Apps Challenge 2026, challenge "Dancing with the SARs".
 Build window: Saturday 14 November 9:00 to Sunday 15 November 23:59 local time.
 
 ## 1. What it is
@@ -172,7 +172,7 @@ Serves PNG, GeoTIFF, CSV and JSON produced by a workflow.
     "granules": [ {"granule_id": "...", "url": "https://...", "tier": "provisional", "date": "2026-06-19",
                    "track": 77, "frame": 27, "direction": "ascending", "polarizations": ["HH","HV"]} ],
     "steps": [ {"name": "read_window", "params": {"rows": [13072, 13792], "cols": [15993, 17153]}, "seconds": 8.9} ],
-    "software": {"name": "nisar-investigator", "version": "0.1.0", "commit": "abc1234"},
+    "software": {"name": "aletheia", "version": "0.1.0", "commit": "abc1234"},
     "generated_at": "2026-11-14T21:00:00Z",
     "reproduce": "python code as a string"
   },
