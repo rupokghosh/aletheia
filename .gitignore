@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+backend/.cache/
+
+# Node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+.netrc
+.vercel/
+
+# OS
+.DS_Store
+
+# Research notes from before the build window (kept out of the submission)
+research_notes/
+reports/
