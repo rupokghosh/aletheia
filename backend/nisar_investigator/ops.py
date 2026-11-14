@@ -88,3 +88,57 @@ def polygon_mask(geometry: dict, x: np.ndarray, y: np.ndarray, epsg: int) -> np.
 
 def area_km2(mask: np.ndarray, pixel_area_km2: float) -> float:
     return float(np.count_nonzero(mask)) * pixel_area_km2
+
+
+# A pixel within this many dB above the estimated floor cannot be told apart from it: the floor estimate sits
+# inside the darkest population of the scene, and multilooked speckle spreads that population by about 1 dB.
+NOISE_MARGIN_DB = 1.5
+
+
+def at_noise_floor(
+    db: np.ndarray, polarization: str, margin_db: float = NOISE_MARGIN_DB
+) -> tuple[np.ndarray, float]:
+    """Pixels at or below the noise floor (within `margin_db` of the scene estimate). Returns (mask, floor_db)."""
+    floor = noise_floor_db(db, polarization)
+    with np.errstate(invalid="ignore"):
+        return np.isfinite(db) & (db <= floor + margin_db), floor
+
+
+def robust_sigma(values: np.ndarray) -> float:
+    """Spread of the central part of a distribution: 1.4826 x the median absolute deviation.
+
+    Equal to the standard deviation for normally distributed values, but blind to the tails, which is where
+    real change sits in a difference image.
+    """
+    v = np.asarray(values, dtype=np.float64)
+    v = v[np.isfinite(v)]
+    if v.size == 0:
+        return float("nan")
+    return float(1.4826 * np.median(np.abs(v - np.median(v))))
+
+
+def disk(diameter: int) -> np.ndarray:
+    """Boolean disk, `diameter` pixels across, for use as a morphological structuring element."""
+    centre = (diameter - 1) / 2.0
+    yy, xx = np.mgrid[:diameter, :diameter]
+    return (yy - centre) ** 2 + (xx - centre) ** 2 <= (diameter / 2.0) ** 2
+
+
+def remove_specks(mask: np.ndarray, diameter: int) -> np.ndarray:
+    """Binary opening with a disk: keeps only patches wide enough to hold a disk of `diameter` pixels."""
+    if diameter <= 1:
+        return np.asarray(mask, dtype=bool).copy()
+    return ndimage.binary_opening(np.asarray(mask, dtype=bool), structure=disk(diameter))
+
+
+def polygon_area_m2(geometry: dict, epsg: int) -> float:
+    """Area of a GeoJSON Polygon (lon/lat) measured in a projected CRS. Holes are subtracted."""
+    from pyproj import Transformer
+
+    tr = Transformer.from_crs("EPSG:4326", f"EPSG:{epsg}", always_xy=True)
+    total = 0.0
+    for i, ring in enumerate(geometry["coordinates"]):
+        px, py = (np.asarray(v) for v in tr.transform([p[0] for p in ring], [p[1] for p in ring]))
+        area = 0.5 * abs(float(np.dot(px, np.roll(py, -1)) - np.dot(py, np.roll(px, -1))))
+        total += area if i == 0 else -area
+    return max(total, 0.0)

@@ -281,6 +281,29 @@ def untraceable_figures(statement: str, digest: dict | None) -> list[str]:
     return [f"{m.group(1)} {m.group(2)}" for m in _FIGURE.finditer(statement) if not _traceable(m.group(1), m.group(2), pool)]
 
 
+def half_quoted_ranges(statement: str, digest: dict | None, *, central_counts: bool = True) -> list[str]:
+    """Range metrics that a statement quotes only partly (one end, or only the central value).
+
+    Areas and displacements are computed as low/central/high. Quoting a single value would overstate what
+    the method can resolve, so a statement that uses any of the three must give both ends.
+    """
+    figures = [m.group(1) for m in _FIGURE.finditer(statement)]
+
+    def quoted(value: float) -> bool:
+        return any(_traceable(text, "", [value]) for text in figures)
+
+    problems = []
+    for metric in ((digest or {}).get("summary") or {}).get("metrics") or []:
+        low, central, high = metric.get("low"), metric.get("central"), metric.get("high")
+        if low is None or high is None or low == high:
+            continue
+        has_low, has_high = quoted(low), quoted(high)
+        has_central = central_counts and central is not None and quoted(central)
+        if (has_low or has_high or has_central) and not (has_low and has_high):
+            problems.append(f"{metric.get('label') or metric.get('key')}: give the full range {low} to {high} {metric.get('unit', '')}".strip())
+    return problems
+
+
 # ----------------------------------------------------------------- the loop
 
 
@@ -349,17 +372,22 @@ class _Session:
             missing = untraceable_figures(item["statement"], self.digests[rid])
             if missing:
                 problems.append(f"In \"{item['statement']}\": {', '.join(missing)} not found in result {rid}.")
+            for partial in half_quoted_ranges(item["statement"], self.digests[rid]):
+                problems.append(f"In \"{item['statement']}\": {partial}.")
         all_digests = {"all": list(self.digests.values())}
         for text in [a["answer"]] + [e["hypothesis"] for e in a["possible_explanations"]]:
             missing = untraceable_figures(text, all_digests)
             if missing:
                 problems.append(f"In \"{text[:80]}\": {', '.join(missing)} not found in any tool result.")
+        for digest in self.digests.values():  # the answer may draw on any result; only range ends trigger here
+            for partial in half_quoted_ranges(a["answer"], digest, central_counts=False):
+                problems.append(f"In the answer: {partial}.")
         final_attempt = self.report_attempts >= MAX_REPORT_ATTEMPTS
         if problems and not final_attempt:
             return False, (
-                "Report not accepted: some figures could not be traced to a tool result. Quote values exactly as "
-                "they appear in the results (same rounding), cite the right result id, and replace derived "
-                "figures with the two source values.\n- " + "\n- ".join(problems)
+                "Report not accepted. Quote values exactly as they appear in the results (same rounding), cite the "
+                "right result id, give ranges with both ends (low to high), and replace derived figures with the "
+                "two source values.\n- " + "\n- ".join(problems)
             )
         unknown = list(a["unknown"])
         if problems:

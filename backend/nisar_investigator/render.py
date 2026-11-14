@@ -16,6 +16,9 @@ COLORMAPS: dict[str, list[tuple[float, int, int, int]]] = {
     # sequential, perceptually ordered
     "viridis": [(0.0, 68, 1, 84), (0.25, 59, 82, 139), (0.5, 33, 145, 140), (0.75, 94, 201, 98), (1.0, 253, 231, 37)],
     "magma": [(0.0, 0, 0, 4), (0.25, 81, 18, 124), (0.5, 183, 55, 121), (0.75, 252, 137, 97), (1.0, 252, 253, 191)],
+    # cyclic (first colour = last colour), for wrapped quantities such as interferometric fringes
+    "cyclic": [(0.0, 226, 74, 74), (1 / 6, 236, 196, 64), (2 / 6, 84, 186, 96), (3 / 6, 62, 186, 198),
+               (4 / 6, 72, 104, 208), (5 / 6, 186, 84, 198), (1.0, 226, 74, 74)],
 }
 
 
@@ -91,3 +94,18 @@ def save_csv(path: Path, header: list[str], rows: list[list]) -> Path:
         w.writerow(header)
         w.writerows(rows)
     return path
+
+
+def save_grey_png(path: Path, values: np.ndarray, vmin: float, vmax: float) -> Path:
+    """Greyscale overlay with transparency for NaN, stored as two channels (about half the size of RGBA)."""
+    v = np.asarray(values, dtype=np.float64)
+    finite = np.isfinite(v)
+    grey = (np.clip((np.where(finite, v, vmin) - vmin) / max(vmax - vmin, 1e-12), 0, 1) * 255).round().astype(np.uint8)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(np.dstack([grey, finite.astype(np.uint8) * 255])).save(path)
+    return path
+
+
+def hex_color(rgba: tuple[int, int, int, int]) -> str:
+    """'#rrggbb' for a legend entry."""
+    return "#{:02x}{:02x}{:02x}".format(*rgba[:3])

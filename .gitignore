@@ -25,3 +25,6 @@ out/
 # Research notes from before the build window (kept out of the submission)
 research_notes/
 reports/
+
+# Third-party design skills (emilkowalski/skills, MIT): used as guidance, not redistributed here
+.claude/skills/

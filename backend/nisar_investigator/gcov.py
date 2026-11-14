@@ -16,6 +16,11 @@ from .schemas import Granule
 
 GRID_PATH = "/science/LSAR/GCOV/grids/frequency{freq}"
 POL_TO_LAYER = {"HH": "HHHH", "HV": "HVHV", "VH": "VHVH", "VV": "VVVV"}
+# Per-pixel validity layer of the product: the sub-swath number (1 to 5) of samples built from fully focused
+# radar data, 0 where they are not (swath edges, transmit gaps) and 255 outside the swath. Samples flagged 0
+# still carry numbers (down to 1e-14 in power), so they must be masked explicitly.
+MASK_LAYER = "mask"
+_MASK_INVALID = (0, 255)
 
 
 class OutsideFrame(ValueError):
@@ -106,7 +111,8 @@ def _chunk_ranges(dset, r0: int, r1: int, c0: int, c1: int) -> list[tuple[int, i
 
 
 def _cache_path(granule_id: str, bbox, layers: tuple[str, ...], freq: str):
-    key = f"{granule_id}|{freq}|{','.join(f'{v:.5f}' for v in bbox)}|{','.join(layers)}"
+    # "v2": windows cached before the validity mask was applied must not be reused
+    key = f"v2|{granule_id}|{freq}|{','.join(f'{v:.5f}' for v in bbox)}|{','.join(layers)}"
     digest = hashlib.sha1(key.encode()).hexdigest()[:20]
     path = config.cache_dir() / "windows"
     path.mkdir(parents=True, exist_ok=True)
@@ -151,11 +157,13 @@ def read_window(
         r0, r1, c0, c1 = _window(x, y, epsg, bbox)
 
         present = [name for name in layers if name in grid]
+        has_mask = MASK_LAYER in grid
         ranges: list[tuple[int, int]] = []
-        for name in present:
+        for name in present + ([MASK_LAYER] if has_mask else []):
             ranges += _chunk_ranges(grid[name], r0, r1, c0, c1)
         rg.raw.prefetch(ranges)
 
+        invalid = np.isin(grid[MASK_LAYER][r0:r1, c0:c1], _MASK_INVALID) if has_mask else None
         out: dict[str, np.ndarray] = {}
         for name in present:
             dset = grid[name]
@@ -164,6 +172,8 @@ def read_window(
             if fill is not None and np.isfinite(fill):
                 arr[arr == fill] = np.nan
             arr[~np.isfinite(arr) | (arr <= 0)] = np.nan
+            if invalid is not None:
+                arr[invalid] = np.nan
             out[name] = arr
         io_stats = rg.raw.stats()
 
@@ -217,10 +227,20 @@ def read_windows(
     Returns one item per granule, in order: a Cutout, or the exception that granule raised.
     """
     jobs = [(g, bbox, polarizations, freq, use_cache) for g in granules]
-    if len(jobs) <= 1 or max_workers <= 1:
-        return [_read_one(j) for j in jobs]
-    try:
-        with ProcessPoolExecutor(max_workers=min(max_workers, len(jobs))) as pool:
-            return list(pool.map(_read_one, jobs))
-    except (OSError, RuntimeError):  # environments without process support
-        return [_read_one(j) for j in jobs]
+    # Windows already on disk are loaded here: starting worker processes for them costs seconds, not milliseconds.
+    layers = tuple(POL_TO_LAYER[p] for p in polarizations if p in POL_TO_LAYER)
+    results: dict[int, Cutout | Exception] = {}
+    for i, job in enumerate(jobs):
+        if use_cache and _cache_path(job[0].granule_id, bbox, layers, freq).exists():
+            results[i] = _read_one(job)
+    remote = [i for i in range(len(jobs)) if i not in results]
+    if len(remote) <= 1 or max_workers <= 1:
+        fetched = [_read_one(jobs[i]) for i in remote]
+    else:
+        try:
+            with ProcessPoolExecutor(max_workers=min(max_workers, len(remote))) as pool:
+                fetched = list(pool.map(_read_one, [jobs[i] for i in remote]))
+        except (OSError, RuntimeError):  # environments without process support
+            fetched = [_read_one(jobs[i]) for i in remote]
+    results.update(zip(remote, fetched))
+    return [results[i] for i in range(len(jobs))]

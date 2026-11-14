@@ -29,6 +29,21 @@ def test_dates_and_counts_are_not_treated_as_figures():
     assert agent.untraceable_figures("Measured on 19 June 2026 across 9 dates on 2 tracks.", DIGEST) == []
 
 
+def test_a_range_must_be_quoted_with_both_ends():
+    assert agent.half_quoted_ranges("Brightness rose over 0.21 to 1.09 km2.", DIGEST) == []
+    assert agent.half_quoted_ranges("HH went from -17.4 dB to -10.7 dB.", DIGEST) == []
+    assert len(agent.half_quoted_ranges("Brightness rose over 1.09 km2.", DIGEST)) == 1
+    assert len(agent.half_quoted_ranges("Brightness rose over about 0.44 km2.", DIGEST)) == 1
+    # in the answer, a central value alone does not trigger (it may belong to another result)
+    assert agent.half_quoted_ranges("About 0.44 km2 changed.", DIGEST, central_counts=False) == []
+
+
+def test_report_quoting_one_end_of_a_range_is_sent_back():
+    s = _session()
+    ok, message = s.submit_report(_report("Brightness rose over 1.09 km2."))
+    assert not ok and "full range" in message
+
+
 def _session() -> agent._Session:
     s = agent._Session(InvestigateRequest(question="What changed?", bbox=(-120.56, 50.675, -120.40, 50.735)))
     s.digests["chg_1"] = DIGEST
