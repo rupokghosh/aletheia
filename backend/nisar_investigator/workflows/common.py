@@ -220,3 +220,26 @@ def tier_caveats(granules: list[Granule]) -> list[Caveat]:
             )
         )
     return out
+
+
+def effort(first_reads: list[dict]) -> dict | None:
+    """What it took to get the data for a result out of NASA's archive, the first time it was read.
+
+    `first_reads` are the `first_read` records of the windows used. Files whose first read was not
+    recorded (windows cached by an older build) are left out, and the count says so.
+    """
+    known = [r for r in first_reads if r and r.get("file_gb")]
+    if not known:
+        return None
+    megabytes = sum(r.get("megabytes", 0.0) for r in known)
+    gigabytes = sum(r["file_gb"] for r in known)
+    seconds = sorted(r.get("seconds", 0.0) for r in known)
+    return {
+        "files": len(first_reads),
+        "files_measured": len(known),
+        "archive_gb": round(gigabytes, 1),
+        "read_mb": round(megabytes, 1),
+        "share_read": round(megabytes / 1000.0 / gigabytes, 4) if gigabytes else None,
+        "requests": int(sum(r.get("requests", 0) for r in known)),
+        "seconds_per_file": round(seconds[len(seconds) // 2], 1),
+    }

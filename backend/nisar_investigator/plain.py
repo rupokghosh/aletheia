@@ -129,7 +129,6 @@ def annotate(result: WorkflowResult) -> WorkflowResult:
                 f"Each full colour cycle is {legend.max if legend and legend.max else 12.1:g} cm of movement, "
                 "like contour lines on a hiking map. Tight bands mean the ground moved a lot over a short distance."
             )
-            layer.group = "advanced"
         if hv:
             layer.group = "advanced"
             layer.title += " (vegetation channel)"

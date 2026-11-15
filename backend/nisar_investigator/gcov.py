@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import time
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
@@ -45,6 +46,9 @@ class Cutout:
     seconds: float = 0.0
     io: dict = field(default_factory=dict)
     from_cache: bool = False
+    # what it took to get this window out of NASA's archive the first time (megabytes, requests, seconds,
+    # file_gb); kept with the cached window so a cached result can still say what it cost
+    first_read: dict = field(default_factory=dict)
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -145,6 +149,7 @@ def read_window(
             rows=tuple(int(v) for v in z["rows"]),
             cols=tuple(int(v) for v in z["cols"]),
             from_cache=True,
+            first_read=json.loads(str(z["first_read"])) if "first_read" in z.files else {},
         )
 
     t0 = time.time()
@@ -176,11 +181,15 @@ def read_window(
                 arr[invalid] = np.nan
             out[name] = arr
         io_stats = rg.raw.stats()
+        file_gb = round(rg.raw.size / 1e9, 2)
 
     yw = y[r0:r1]
     if len(yw) > 1 and yw[0] < yw[-1]:  # make north-up
         yw = yw[::-1]
         out = {k: v[::-1] for k, v in out.items()}
+    seconds = round(time.time() - t0, 2)
+    first_read = {"megabytes": io_stats.get("megabytes", 0.0), "requests": io_stats.get("requests", 0),
+                  "seconds": seconds, "file_gb": file_gb}
     cut = Cutout(
         granule_id=granule.granule_id,
         layers=out,
@@ -189,8 +198,9 @@ def read_window(
         epsg=epsg,
         rows=(r0, r1),
         cols=(c0, c1),
-        seconds=round(time.time() - t0, 2),
+        seconds=seconds,
         io=io_stats,
+        first_read=first_read,
     )
     if use_cache:
         np.savez_compressed(
@@ -200,6 +210,7 @@ def read_window(
             epsg=np.int64(epsg),
             rows=np.array(cut.rows),
             cols=np.array(cut.cols),
+            first_read=np.array(json.dumps(first_read)),
             **{f"L_{k}": v for k, v in out.items()},
         )
     return cut

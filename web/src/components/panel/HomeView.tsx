@@ -77,14 +77,20 @@ function Showcases() {
               <li key={entry.id}>
                 <button
                   type="button"
-                  className="press w-full rounded-2xl border border-line bg-panel p-4 text-left hover:bg-raised disabled:opacity-60"
+                  className="press w-full overflow-hidden rounded-2xl border border-line bg-panel text-left hover:bg-raised disabled:opacity-60"
                   disabled={opening !== null}
                   onClick={() => void open(entry)}
                 >
-                  <span className="block text-[13px] [overflow-wrap:anywhere] text-ink-3">{entry.place_name}</span>
-                  <span className="mt-0.5 block text-[15px] [overflow-wrap:anywhere] text-ink">{entry.title}</span>
-                  <span className="mt-1 block text-sm leading-snug [overflow-wrap:anywhere] text-ink-2">{entry.question}</span>
-                  {opening === entry.id ? <span className="mt-1.5 block text-[13px] text-ink-3">Opening</span> : null}
+                  {entry.thumbnail ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- a small static file; no optimiser needed
+                    <img src={entry.thumbnail} alt="" className="aspect-[16/7] w-full border-b border-line object-cover" loading="lazy" />
+                  ) : null}
+                  <span className="block p-4">
+                    <span className="block text-[13px] [overflow-wrap:anywhere] text-ink-3">{entry.place_name}</span>
+                    <span className="mt-0.5 block text-[15px] [overflow-wrap:anywhere] text-ink">{entry.title}</span>
+                    <span className="mt-1 block text-sm leading-snug [overflow-wrap:anywhere] text-ink-2">{entry.question}</span>
+                    {opening === entry.id ? <span className="mt-1.5 block text-[13px] text-ink-3">Opening</span> : null}
+                  </span>
                 </button>
               </li>
             ))}
@@ -124,15 +130,17 @@ export function HomeView() {
         <AreaView bbox={bbox} />
       ) : (
         <>
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-            <Button variant="secondary" aria-pressed={drawing} onClick={() => dispatch({ type: "drawing", drawing: !drawing })}>
-              <DrawIcon />
-              {drawing ? "Cancel drawing" : "Draw area"}
-            </Button>
-            <p className="text-sm text-ink-3">{drawing ? "Drag a rectangle on the map." : "to choose the exact area yourself."}</p>
-          </div>
-          <details className="mt-3">
-            <summary className="w-max text-sm text-ink-2 underline underline-offset-2 hover:text-ink">Enter coordinates instead</summary>
+          <details className="mt-2">
+            <summary className="w-max text-sm text-ink-2 underline underline-offset-2 hover:text-ink">
+              Choose the exact area yourself
+            </summary>
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <Button variant="secondary" size="sm" aria-pressed={drawing} onClick={() => dispatch({ type: "drawing", drawing: !drawing })}>
+                <DrawIcon />
+                {drawing ? "Cancel drawing" : "Draw a rectangle"}
+              </Button>
+              {drawing ? <p className="text-sm text-ink-3">Drag on the map.</p> : null}
+            </div>
             <CoordinateForm bbox={null} />
           </details>
           <Showcases />

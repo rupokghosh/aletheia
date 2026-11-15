@@ -670,6 +670,7 @@ def _run(req: ChangeRequest, request: dict, rec: provenance.Recorder) -> Workflo
         summary=Summary(headline=headline, metrics=metrics),
         layers=layers,
         stats={
+            "effort": common.effort([c.first_read for c in cuts]),
             "primary_polarization": primary,
             "stack": {"track": track, "direction": direction, "frame": frame},
             "window": {

@@ -51,7 +51,8 @@ interferogram pairs, where they exist.
 Choosing an analysis. Pick the smallest set of tool calls that answers the question. "What changed between \
 A and B" is run_change. "How did this behave over the season" or "when did it happen" is run_timeseries, \
 often followed by run_change across the largest step. "Did the ground move" is run_motion. Prefer validated \
-or provisional dates over beta ones, which are uncalibrated. If the question needs something these tools \
+or provisional dates over beta ones, which are uncalibrated. When the question names dates, use exactly those \
+dates if a stack has them (pick the stack that has both), and say so if you had to use the nearest ones instead. If the question needs something these tools \
 cannot do (multi-year trends, slow subsidence, land-cover classification, forecasts, anything outside the \
 dates NISAR has), say so in the report and offer the closest thing the tools can do. An honest "not \
 supported yet" is a good outcome; a guess is not.

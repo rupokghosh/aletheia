@@ -24,7 +24,7 @@ SHOWCASES = [
         "title": "Kamloops Lake through the summer",
         "place_name": "Kamloops Lake, British Columbia",
         "bbox": (-120.56, 50.675, -120.40, 50.735),
-        "question": "How did the east end of Kamloops Lake change between June and October 2026, and does the river gauge agree?",
+        "question": "How did the east end of Kamloops Lake change between 19 June and 17 October 2026, and does the river gauge agree?",
     },
     {
         "id": "venezuela-earthquakes",
@@ -43,6 +43,36 @@ SHOWCASES = [
 ]
 
 _KEEP = {".png", ".csv", ".json"}
+_MAIN_LAYERS = ("displacement", "change_db")  # what an example's thumbnail shows, in order of preference
+_BACKDROPS = ("after", "coherence")
+
+
+def _thumbnail(target: Path, investigation: dict, artifacts_dir: Path) -> str | None:
+    """A small picture of the example's main map layer over its radar image."""
+    from PIL import Image
+
+    for result in investigation["results"].values():
+        if not isinstance(result, dict) or not result.get("layers"):
+            continue
+        ids = {layer["id"]: layer for layer in result["layers"]}
+        main = next((ids[i] for i in _MAIN_LAYERS if i in ids), None)
+        if main is None:
+            continue
+        folder = artifacts_dir / result["id"]
+        top = Image.open(folder / f"{main['id']}.png").convert("RGBA")
+        canvas = Image.new("RGBA", top.size, (236, 236, 236, 255))
+        backdrop = next((folder / f"{i}.png" for i in _BACKDROPS if (folder / f"{i}.png").exists()), None)
+        if backdrop is not None and main["id"] == "change_db":
+            grey = Image.open(backdrop).convert("RGBA")
+            grey.putalpha(grey.getchannel("A").point(lambda a: int(a * 0.55)))
+            canvas.alpha_composite(grey)
+        canvas.alpha_composite(top)
+        w, h = canvas.size
+        side = min(w, int(h * 16 / 9))
+        box = ((w - side) // 2, (h - int(side * 9 / 16)) // 2, (w + side) // 2, (h + int(side * 9 / 16)) // 2)
+        canvas.crop(box).convert("RGB").resize((640, 360), Image.LANCZOS).save(target / "thumb.jpg", quality=84)
+        return "thumb.jpg"
+    return None
 
 
 def _export(showcase: dict, investigation: dict, artifacts_dir: Path) -> dict:
@@ -86,8 +116,10 @@ def _export(showcase: dict, investigation: dict, artifacts_dir: Path) -> dict:
 
     (target / "investigation.json").write_text(json.dumps(investigation, indent=1))
     report = investigation.get("report") or {}
+    thumb = _thumbnail(target, investigation, artifacts_dir)
     return {
         "id": slug,
+        "thumbnail": f"/showcases/{slug}/{thumb}" if thumb else None,
         "title": showcase["title"],
         "place_name": showcase["place_name"],
         "question": showcase["question"],

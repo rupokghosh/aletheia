@@ -99,6 +99,8 @@ class GunwCutout:
     seconds: float = 0.0
     io: dict = field(default_factory=dict)
     from_cache: bool = False
+    # what the first read from NASA's archive cost (megabytes, requests, seconds, file_gb)
+    first_read: dict = field(default_factory=dict)
 
     @property
     def wavelength_m(self) -> float:
@@ -258,6 +260,7 @@ def _from_cache(path, granule_id: str) -> GunwCutout:
         incidence_deg=meta["incidence_deg"],
         los_enu=tuple(meta["los_enu"]) if meta["los_enu"] else None,
         from_cache=True,
+        first_read=json.loads(str(z["first_read"])) if "first_read" in z.files else {},
     )
 
 
@@ -585,6 +588,7 @@ def read_window(
                 "network_seconds": round(rg.raw.network_seconds + exact_stats["network_seconds"], 2),
                 "mode": "chunks",
             }
+        file_gb = round(rg.raw.size / 1e9, 2)
 
     yw = y[r0:r1]
     if len(yw) > 1 and yw[0] < yw[-1]:  # make north-up
@@ -602,6 +606,8 @@ def read_window(
         io=io_stats,
         **meta,
     )
+    cut.first_read = {"megabytes": io_stats.get("megabytes", 0.0), "requests": io_stats.get("requests", 0),
+                      "seconds": cut.seconds, "file_gb": file_gb}
     if use_cache:
         np.savez_compressed(
             cache,
@@ -610,6 +616,7 @@ def read_window(
             epsg=np.int64(epsg),
             rows=np.array(cut.rows),
             cols=np.array(cut.cols),
+            first_read=np.array(json.dumps(cut.first_read)),
             meta=np.array(json.dumps(meta)),
             **{f"L_{k}": v for k, v in out.items()},
         )

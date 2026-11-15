@@ -10,6 +10,7 @@ import { boundsOf } from "@/lib/geo";
 import { useApp, type StoredResult } from "@/lib/store";
 import type { WorkflowKind } from "@/lib/types";
 import { Downloads } from "./Downloads";
+import { EffortStrip } from "./EffortStrip";
 import { MetricRange, SingleValues, splitMetrics } from "./MetricRange";
 import { ReceiptSection } from "./ReceiptSection";
 import { SeriesChart } from "./SeriesChart";
@@ -97,6 +98,8 @@ export function ResultView({ stored }: { stored: StoredResult }) {
           <SourceBadge source={source} detailed />
         </div>
       ) : null}
+
+      <EffortStrip stats={result.stats} />
 
       {lead.length > 0 ? (
         <div className="mt-6 space-y-5">

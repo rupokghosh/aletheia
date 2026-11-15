@@ -347,4 +347,6 @@ export interface ShowcaseEntry {
   summary?: string;
   /** Path of the Investigation JSON, relative to /showcases/ */
   file: string;
+  /** a small picture of the example's main map, as a site path */
+  thumbnail?: string | null;
 }

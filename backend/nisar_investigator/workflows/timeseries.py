@@ -299,6 +299,7 @@ def _run(req: TimeSeriesRequest, request: dict, rec: provenance.Recorder) -> Wor
     skipped: dict[str, dict] = {}  # by granule id
     failures: list[Skip] = []
     io = dict.fromkeys(("granules_read", "from_cache"), 0)
+    first_reads: list[dict] = []
     io.update(megabytes_transferred=0.0, read_seconds=0.0, measure_seconds=0.0)
 
     def skip(key: StackKey, granule: Granule, reason: str) -> None:
@@ -322,6 +323,7 @@ def _run(req: TimeSeriesRequest, request: dict, rec: provenance.Recorder) -> Wor
             if isinstance(cut, gcov.Cutout):
                 io["granules_read"] += 1
                 io["from_cache"] += int(cut.from_cache)
+                first_reads.append(cut.first_read)
                 io["megabytes_transferred"] += cut.io.get("megabytes", 0.0)
             if isinstance(outcome, DateRecord):
                 records.setdefault(key, []).append(outcome)
@@ -601,6 +603,7 @@ def _run(req: TimeSeriesRequest, request: dict, rec: provenance.Recorder) -> Wor
         layers=layers,
         series=series,
         stats={
+            "effort": common.effort(first_reads),
             "dates": {"count": len(days), "first": days[0], "last": days[-1]},
             "tracks": [
                 {"track": k[0], "direction": k[1], "frame": k[2], "dates_used": len(v)} for k, v in records.items()

@@ -1265,6 +1265,7 @@ def run_motion(
     }
     stats["timing"]["analysis_seconds"] = res.seconds
     stats["timing"]["total_seconds"] = round(time.time() - t_start, 2)
+    stats["effort"] = common.effort([cut.first_read])
 
     downloads = [
         Download(label="Line-of-sight motion in cm (GeoTIFF)", url=provenance.artifact_url(result_id, "displacement_cm.tif"), format="geotiff"),
