@@ -8,6 +8,7 @@ import { AXIS, GRID, LABEL } from "./palette";
 
 const HEIGHT = 196;
 const MARGIN = { top: 26, right: 14, bottom: 26, left: 38 };
+const PASS_LABEL = 104; // the room a full pass label ("Second pass: 3.31 m") takes
 
 export interface GaugeSeries {
   /** [ISO day, level in metres], oldest first */
@@ -106,14 +107,19 @@ export function GaugeChart({ daily, marks }: GaugeSeries) {
               strokeLinecap="round"
             />
             {marked.map((point, index) => {
+              // Two passes close together leave no room for two full labels side by side: then only the
+              // levels are written, and the note under the chart says what the dashed lines are.
+              const terse = marked.length > 1 && x(marked[1].day) - x(marked[0].day) < 2 * PASS_LABEL;
               // The label of a pass near the right edge is written to its left, so it stays inside the chart.
-              const flip = x(point.day) > width - 96;
+              const flip = x(point.day) > width - (terse ? PASS_LABEL / 2 : PASS_LABEL);
+              const name = index === 0 && marked.length > 1 ? "First pass" : marked.length > 1 ? "Second pass" : "Radar pass";
               return (
                 <g key={point.iso}>
                   <line x1={x(point.day)} x2={x(point.day)} y1={MARGIN.top - 6} y2={base} stroke="var(--ink)" strokeDasharray="3 3" />
                   <circle cx={x(point.day)} cy={y(point.level)} r={4.5} fill="var(--ink)" stroke="var(--panel)" strokeWidth={1.75} />
                   <text x={x(point.day) + (flip ? -6 : 6)} y={MARGIN.top - 12} textAnchor={flip ? "end" : "start"} fontSize={11} fill="var(--ink)">
-                    {index === 0 && marked.length > 1 ? "First pass" : marked.length > 1 ? "Second pass" : "Radar pass"}: {formatNumber(point.level, 2)} m
+                    {terse ? "" : `${name}: `}
+                    {formatNumber(point.level, 2)} m
                   </text>
                 </g>
               );
