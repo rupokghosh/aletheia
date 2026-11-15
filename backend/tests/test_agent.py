@@ -94,3 +94,27 @@ def test_after_repeated_failures_the_report_is_kept_but_flagged():
     ok, _ = s.submit_report(_report("Brightness rose over 3.3 km2."))
     assert ok and s.report is not None
     assert any("could not trace" in u for u in s.report.unknown)
+
+
+def test_dates_named_in_a_question_are_found():
+    q = "How did the lake change between 19 June and 17 October 2026, and does the gauge agree?"
+    assert agent.question_dates(q) == ["2026-06-19", "2026-10-17"]
+    assert agent.question_dates("Did the ground move on June 24, 2026?") == ["2026-06-24"]
+    assert agent.question_dates("Compare 2026-09-27 with 2026-10-21.") == ["2026-09-27", "2026-10-21"]
+    assert agent.question_dates("What changed here over the summer?") == []
+
+
+def test_a_long_answer_is_sent_back():
+    s = _session()
+    report = _report("Brightness rose over 0.21 to 1.09 km2.")
+    report["answer"] = " ".join(["word"] * (agent.MAX_ANSWER_WORDS + 1))
+    ok, message = s.submit_report(report)
+    assert not ok and "one or two sentences" in message
+
+
+def test_a_date_followed_by_a_value_is_not_read_as_a_range():
+    gauge = {"id": "ctx_river_gauges", "gauges": [{"level_on_dates": {"2026-09-27": 1.494, "2026-10-21": 3.313}}]}
+    text = "River gauge 02366500 recorded 1.494 m on 2026-09-27 and 3.313 m on 2026-10-21."
+    assert agent.untraceable_figures(text, gauge) == []
+    assert agent.untraceable_figures("It moved between 5 and 7 cm.", {"a": 7.0}) == ["5 cm"]
+    assert agent.untraceable_figures("It moved 5-7 cm.", {"a": 7.0}) == ["5 cm"]

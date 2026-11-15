@@ -1,5 +1,5 @@
 {
-  "id": "mot_20261114_ee8f7c5a",
+  "id": "mot_20261115_00dd8556",
   "workflow": "motion",
   "status": "ok",
   "request": {
@@ -9,8 +9,8 @@
       -67.95,
       10.75
     ],
-    "reference_date": "2026-06-13",
-    "track": 162,
+    "reference_date": "2026-06-17",
+    "track": 54,
     "coherence_threshold": null,
     "remove_ramp": null,
     "apply_ionosphere": null,
@@ -18,16 +18,17 @@
       "coherence_threshold": 0.3,
       "remove_ramp": false,
       "apply_ionosphere": true,
-      "reference_date": "2026-06-13",
-      "track": 162
+      "reference_date": "2026-06-17",
+      "track": 54
     }
   },
   "summary": {
-    "headline": "Up to 47 to 62 cm of line-of-sight motion across the area between 13 and 25 June 2026",
+    "headline": "Up to 48 to 66 cm of line-of-sight motion across the area between 17 and 29 June 2026",
     "metrics": [
       {
         "key": "noise_level_cm",
         "label": "Noise level (largest value accepted as atmosphere, assumed; the field is dominated by motion)",
+        "technical_label": null,
         "unit": "cm",
         "central": 2.5,
         "low": null,
@@ -36,74 +37,83 @@
       {
         "key": "field_spread_cm",
         "label": "Robust spread of the motion field (1.4826 x MAD)",
+        "technical_label": null,
         "unit": "cm",
-        "central": 13.62,
-        "low": 10.07,
-        "high": 14.14
+        "central": 21.44,
+        "low": 14.03,
+        "high": 24.73
       },
       {
         "key": "los_span_p5_p95_cm",
         "label": "Line-of-sight motion span, 5th to 95th percentile",
+        "technical_label": null,
         "unit": "cm",
-        "central": 50.98,
-        "low": 30.17,
-        "high": 51.51
+        "central": 57.62,
+        "low": 39.43,
+        "high": 58.87
       },
       {
         "key": "los_peak_to_peak_cm",
         "label": "Line-of-sight motion range, 1st to 99th percentile",
+        "technical_label": null,
         "unit": "cm",
-        "central": 61.64,
-        "low": 46.83,
-        "high": 61.85
+        "central": 65.47,
+        "low": 47.86,
+        "high": 65.98
       },
       {
         "key": "max_toward_satellite_cm",
         "label": "Largest motion toward the satellite (99th percentile)",
+        "technical_label": null,
         "unit": "cm",
-        "central": 42.51,
-        "low": 30.88,
-        "high": 42.8
+        "central": 18.89,
+        "low": 13.59,
+        "high": 19.41
       },
       {
         "key": "max_away_from_satellite_cm",
         "label": "Largest motion away from the satellite (1st percentile)",
+        "technical_label": null,
         "unit": "cm",
-        "central": 19.13,
-        "low": 15.95,
-        "high": 19.13
+        "central": 46.58,
+        "low": 31.54,
+        "high": 47.03
       },
       {
         "key": "area_above_2x_noise_km2",
         "label": "Area that moved more than 2 x the noise level (5.0 cm)",
+        "technical_label": null,
         "unit": "km2",
-        "central": 898.8,
-        "low": 635.3,
-        "high": 1080.4
+        "central": 652.8,
+        "low": 422.0,
+        "high": 845.2
       },
       {
         "key": "area_above_3x_noise_km2",
         "label": "Area that moved more than 3 x the noise level (7.5 cm)",
+        "technical_label": null,
         "unit": "km2",
-        "central": 728.0,
-        "low": 502.5,
-        "high": 887.2
+        "central": 589.5,
+        "low": 393.0,
+        "high": 740.9
       },
       {
         "key": "masked_percent",
         "label": "Share of the area masked out (water, lost coherence, not unwrapped)",
+        "technical_label": null,
         "unit": "%",
-        "central": 51.6,
-        "low": 42.4,
-        "high": 65.7
+        "central": 68.7,
+        "low": 54.9,
+        "high": 81.3
       },
       {
         "key": "ionosphere_range_cm",
         "label": "Range of NASA's ionosphere estimate across the area",
+        "technical_label": null,
         "unit": "cm",
-        "central": 12.85,
-        "low": 10.18,
-        "high": 14.68
+        "central": 13.22,
+        "low": 11.11,
+        "high": 14.79
       }
     ]
   },
@@ -112,7 +122,7 @@
       "id": "displacement",
       "title": "Line-of-sight motion (cm; red = toward the satellite, blue = away)",
       "kind": "image",
-      "url": "/api/artifacts/mot_20261114_ee8f7c5a/displacement.png",
+      "url": "/api/artifacts/mot_20261115_00dd8556/displacement.png",
       "corners": [
         [
           -68.449769,
@@ -137,16 +147,21 @@
         "min": -50.0,
         "max": 50.0,
         "colormap": "RdBu",
-        "classes": []
+        "classes": [],
+        "min_label": null,
+        "max_label": null
       },
       "default_visible": true,
-      "date": "2026-06-25"
+      "date": "2026-06-29",
+      "description": null,
+      "technical_title": null,
+      "group": "main"
     },
     {
       "id": "coherence",
       "title": "Coherence (0 = signal lost, 1 = stable surface)",
       "kind": "image",
-      "url": "/api/artifacts/mot_20261114_ee8f7c5a/coherence.png",
+      "url": "/api/artifacts/mot_20261115_00dd8556/coherence.png",
       "corners": [
         [
           -68.449769,
@@ -171,16 +186,21 @@
         "min": 0.0,
         "max": 1.0,
         "colormap": "grey",
-        "classes": []
+        "classes": [],
+        "min_label": null,
+        "max_label": null
       },
       "default_visible": false,
-      "date": "2026-06-25"
+      "date": "2026-06-29",
+      "description": null,
+      "technical_title": null,
+      "group": "main"
     },
     {
       "id": "fringes",
       "title": "Motion rewrapped into fringes (one colour cycle = 12.1 cm)",
       "kind": "image",
-      "url": "/api/artifacts/mot_20261114_ee8f7c5a/fringes.png",
+      "url": "/api/artifacts/mot_20261115_00dd8556/fringes.png",
       "corners": [
         [
           -68.449769,
@@ -205,24 +225,29 @@
         "min": 0.0,
         "max": 12.1,
         "colormap": "cyclic",
-        "classes": []
+        "classes": [],
+        "min_label": null,
+        "max_label": null
       },
       "default_visible": false,
-      "date": "2026-06-25"
+      "date": "2026-06-29",
+      "description": null,
+      "technical_title": null,
+      "group": "main"
     }
   ],
   "series": [],
   "stats": {
     "pair": {
-      "reference_date": "2026-06-13",
-      "secondary_date": "2026-06-25",
+      "reference_date": "2026-06-17",
+      "secondary_date": "2026-06-29",
       "days": 12,
-      "track": 162,
-      "direction": "ascending",
-      "frame": 7,
+      "track": 54,
+      "direction": "descending",
+      "frame": 83,
       "tier": "provisional",
       "coverage_of_area": 1.0,
-      "granule_id": "NISAR_L2_PR_GUNW_022_162_A_007_023_4000_SH_20260613T100656_20260613T100731_20260625T100655_20260625T100730_P05023_N_F_J_001",
+      "granule_id": "NISAR_L2_PR_GUNW_023_054_D_083_024_4000_SH_20260617T230235_20260617T230310_20260629T230235_20260629T230309_P05023_N_F_J_001",
       "polarization": "HH"
     },
     "sign_convention": "Positive values mean the ground moved toward the satellite (for example uplift); negative values mean it moved away from the satellite (for example subsidence).",
@@ -230,14 +255,14 @@
       "wavelength_cm": 24.2,
       "cm_per_fringe": 12.1,
       "look_direction": "left",
-      "pass_direction": "ascending",
-      "incidence_deg": 41.3,
+      "pass_direction": "descending",
+      "incidence_deg": 43.1,
       "los_unit_vector_east_north_up": [
-        0.645,
-        0.136,
-        0.751
+        -0.66,
+        0.175,
+        0.73
       ],
-      "satellite_is_to_the": "east-north-east"
+      "satellite_is_to_the": "west-north-west"
     },
     "window": {
       "shape": [
@@ -249,22 +274,22 @@
         2840
       ],
       "cols": [
-        1872,
-        2557
+        2115,
+        2800
       ],
       "pixel_m": 80.0,
       "area_km2": 2735.6,
       "epsg": 32619
     },
     "masking": {
-      "valid_fraction": 0.4836,
-      "masked_fraction": 0.5164,
+      "valid_fraction": 0.313,
+      "masked_fraction": 0.687,
       "no_data_fraction": 0.0,
       "water_fraction": 0.3585,
-      "not_unwrapped_fraction": 0.0358,
-      "low_coherence_fraction": 0.122,
+      "not_unwrapped_fraction": 0.1221,
+      "low_coherence_fraction": 0.2064,
       "coherence_threshold": 0.3,
-      "median_coherence_of_usable": 0.467
+      "median_coherence_of_usable": 0.43
     },
     "available_pairs": [
       {
@@ -389,27 +414,33 @@
       }
     ],
     "timing": {
-      "read_seconds": 0.0,
-      "from_cache": true,
-      "io": {},
-      "analysis_seconds": 0.05,
-      "total_seconds": 0.63
+      "read_seconds": 7.72,
+      "from_cache": false,
+      "io": {
+        "requests": 31,
+        "megabytes": 37.6,
+        "fraction_of_file": 0.01637,
+        "network_seconds": 12.49,
+        "mode": "chunks"
+      },
+      "analysis_seconds": 0.06,
+      "total_seconds": 8.76
     },
     "displacement_cm": {
-      "p1": -19.13,
-      "p5": -16.46,
-      "p95": 34.51,
-      "p99": 42.51,
-      "min": -26.97,
-      "max": 59.53,
-      "median_removed": 25.1
+      "p1": -46.58,
+      "p5": -41.57,
+      "p95": 16.05,
+      "p99": 18.89,
+      "min": -52.06,
+      "max": 24.23,
+      "median_removed": 14.49
     },
     "noise": {
       "noise_level_cm": 2.5,
       "noise_level_basis": "ceiling",
-      "field_spread_cm": 13.62,
-      "short_distance_scatter_cm": 0.944,
-      "decorrelation_noise_cm": 0.179,
+      "field_spread_cm": 21.44,
+      "short_distance_scatter_cm": 1.084,
+      "decorrelation_noise_cm": 0.198,
       "typical_atmosphere_cm": [
         1.0,
         2.0
@@ -422,64 +453,73 @@
       "signal_detected": true,
       "inconclusive": false,
       "threshold_cm": 22.5,
-      "smallest_range_cm": 54.22,
-      "range_after_ramp_removal_cm": 46.83,
+      "smallest_range_cm": 57.33,
+      "range_after_ramp_removal_cm": 47.86,
       "rule": "range (1st to 99th percentile) > 9 x noise level for every processing choice, and again after planar ramp removal (or a ramp-removed spread above 5 cm); noise level kept between 1 and 2.5 cm"
     },
     "ionosphere": {
       "available": true,
       "applied": true,
-      "range_cm": 12.85,
-      "range_p5_p95_cm": 10.18,
-      "range_min_max_cm": 14.68,
-      "uncertainty_median_cm": 3.1
+      "range_cm": 13.22,
+      "range_p5_p95_cm": 11.11,
+      "range_min_max_cm": 14.79,
+      "uncertainty_median_cm": 3.67
     },
     "ramp": {
       "removed": false,
-      "east_west_cm": -28.1,
-      "north_south_cm": 33.92,
-      "east_west_cm_per_km": -0.5135,
-      "north_south_cm_per_km": 0.6806
+      "east_west_cm": 30.13,
+      "north_south_cm": -35.88,
+      "east_west_cm_per_km": 0.5505,
+      "north_south_cm_per_km": -0.7199
     },
     "unwrapped_regions": 1,
-    "usable_area_km2": 1322.9,
+    "usable_area_km2": 856.2,
     "variants": [
       {
         "variant": "default settings",
-        "robust_spread_cm": 13.62,
-        "span_p5_p95_cm": 50.98,
-        "range_p1_p99_cm": 61.64,
-        "usable_fraction": 0.484
+        "robust_spread_cm": 21.44,
+        "span_p5_p95_cm": 57.62,
+        "range_p1_p99_cm": 65.47,
+        "usable_fraction": 0.313
       },
       {
         "variant": "coherence >= 0.2",
-        "robust_spread_cm": 14.14,
-        "span_p5_p95_cm": 50.67,
-        "range_p1_p99_cm": 61.85,
-        "usable_fraction": 0.576
+        "robust_spread_cm": 16.91,
+        "span_p5_p95_cm": 56.2,
+        "range_p1_p99_cm": 64.86,
+        "usable_fraction": 0.451
       },
       {
         "variant": "coherence >= 0.4",
-        "robust_spread_cm": 12.84,
-        "span_p5_p95_cm": 51.51,
-        "range_p1_p99_cm": 61.42,
-        "usable_fraction": 0.343
+        "robust_spread_cm": 24.73,
+        "span_p5_p95_cm": 58.87,
+        "range_p1_p99_cm": 65.98,
+        "usable_fraction": 0.187
       },
       {
         "variant": "ionosphere correction not applied",
-        "robust_spread_cm": 13.17,
-        "span_p5_p95_cm": 45.0,
-        "range_p1_p99_cm": 54.22,
-        "usable_fraction": 0.484
+        "robust_spread_cm": 15.85,
+        "span_p5_p95_cm": 51.67,
+        "range_p1_p99_cm": 57.33,
+        "usable_fraction": 0.313
       },
       {
         "variant": "planar ramp removed",
-        "robust_spread_cm": 10.07,
-        "span_p5_p95_cm": 30.17,
-        "range_p1_p99_cm": 46.83,
-        "usable_fraction": 0.484
+        "robust_spread_cm": 14.03,
+        "span_p5_p95_cm": 39.43,
+        "range_p1_p99_cm": 47.86,
+        "usable_fraction": 0.313
       }
-    ]
+    ],
+    "effort": {
+      "files": 1,
+      "files_measured": 1,
+      "archive_gb": 2.3,
+      "read_mb": 37.6,
+      "share_read": 0.0163,
+      "requests": 31,
+      "seconds_per_file": 7.7
+    }
   },
   "uncertainty": {
     "method": "NASA GUNW unwrapped phase (HH, 80 m) converted to line-of-sight displacement with the 24.2 cm wavelength read from the file, NASA's ionosphere phase screen subtracted, masked where coherence is below 0.3, over water or not reliably unwrapped, referenced to the window median. Noise level from the robust spread (1.4826 x MAD); ranges from repeating the analysis with coherence thresholds 0.2 / 0.3 / 0.4, with and without the ionosphere correction, and with and without a planar ramp.",
@@ -487,105 +527,105 @@
       {
         "parameter": "coherence threshold",
         "value": 0.2,
-        "result": 61.85,
+        "result": 64.86,
         "unit": "cm range (1st to 99th percentile)"
       },
       {
         "parameter": "coherence threshold",
         "value": 0.3,
-        "result": 61.64,
+        "result": 65.47,
         "unit": "cm range (1st to 99th percentile)"
       },
       {
         "parameter": "coherence threshold",
         "value": 0.4,
-        "result": 61.42,
+        "result": 65.98,
         "unit": "cm range (1st to 99th percentile)"
       },
       {
         "parameter": "coherence threshold",
         "value": 0.2,
-        "result": 887.2,
+        "result": 740.9,
         "unit": "km2 beyond 3 x noise"
       },
       {
         "parameter": "coherence threshold",
         "value": 0.3,
-        "result": 728.0,
+        "result": 589.5,
         "unit": "km2 beyond 3 x noise"
       },
       {
         "parameter": "coherence threshold",
         "value": 0.4,
-        "result": 502.5,
+        "result": 393.0,
         "unit": "km2 beyond 3 x noise"
       },
       {
         "parameter": "ionosphere correction",
         "value": "applied",
-        "result": 61.64,
+        "result": 65.47,
         "unit": "cm range (1st to 99th percentile)"
       },
       {
         "parameter": "ionosphere correction",
         "value": "applied",
-        "result": 13.62,
+        "result": 21.44,
         "unit": "cm robust spread"
       },
       {
         "parameter": "ionosphere correction",
         "value": "not applied",
-        "result": 54.22,
+        "result": 57.33,
         "unit": "cm range (1st to 99th percentile)"
       },
       {
         "parameter": "ionosphere correction",
         "value": "not applied",
-        "result": 13.17,
+        "result": 15.85,
         "unit": "cm robust spread"
       },
       {
         "parameter": "planar ramp",
         "value": "removed",
-        "result": 46.83,
+        "result": 47.86,
         "unit": "cm range (1st to 99th percentile)"
       },
       {
         "parameter": "planar ramp",
         "value": "removed",
-        "result": 10.07,
+        "result": 14.03,
         "unit": "cm robust spread"
       },
       {
         "parameter": "planar ramp",
         "value": "kept",
-        "result": 61.64,
+        "result": 65.47,
         "unit": "cm range (1st to 99th percentile)"
       },
       {
         "parameter": "planar ramp",
         "value": "kept",
-        "result": 13.62,
+        "result": 21.44,
         "unit": "cm robust spread"
       }
     ],
-    "noise_floor_fraction": 0.5164,
+    "noise_floor_fraction": 0.687,
     "notes": [
-      "Displacement is measured along the radar line of sight and is relative: the median of the usable pixels in the window (+25.1 cm before referencing) was set to zero. Positive values mean the ground moved toward the satellite (for example uplift); negative values mean it moved away from the satellite (for example subsidence).",
-      "Empirical noise level: the robust spread of the motion field (1.4826 x median absolute deviation) is 13.62 cm, and 10.07 to 14.14 cm across the processing choices.",
+      "Displacement is measured along the radar line of sight and is relative: the median of the usable pixels in the window (+14.5 cm before referencing) was set to zero. Positive values mean the ground moved toward the satellite (for example uplift); negative values mean it moved away from the satellite (for example subsidence).",
+      "Empirical noise level: the robust spread of the motion field (1.4826 x median absolute deviation) is 21.44 cm, and 14.03 to 24.73 cm across the processing choices.",
       "A single 12-day pair typically carries about 1 to 2 cm of atmospheric noise, so smaller signals cannot be trusted. The noise level is therefore never taken below 1 cm.",
-      "Decision rule: motion is reported only if the 1st-to-99th percentile range exceeds 9 x the noise level (22.5 cm here) for every processing choice and the field still stands out after a planar ramp is removed (same test, or a spread above 5 cm). Ideal noise gives 4.65 x; 44 real NISAR pairs without an earthquake gave 2.6 to 6.9 x. Smallest range found: 54.2 cm; after ramp removal: 46.8 cm.",
-      "52% of the window was masked: 12% coherence below 0.3, 36% water, 4% not reliably unwrapped, 0% no data.",
-      "The field's spread (13.6 cm) is far larger than atmosphere can explain, so it is attributed to motion and the noise level is set to 2.5 cm, the largest value this workflow accepts as atmosphere, rather than measured. Scatter over short distances (2.6 km tiles) is 0.94 cm.",
-      "Ionosphere: NASA's ionosphere phase screen spans 12.8 cm across the usable area. NASA ships it as a separate layer and does not apply it; here it WAS subtracted. Without it the robust spread would be 13.17 cm instead of 13.62 cm. NASA's own uncertainty for that estimate is 3.1 cm (median).",
-      "Planar ramp: a best-fit plane changes by -28.1 cm from west to east and +33.9 cm from south to north across the window. It was kept (a ramp can be real motion).",
-      "Noise from loss of coherence alone is about 0.18 cm per pixel (median coherence 0.467, 208 looks): the noise here is mostly atmospheric, not instrumental."
+      "Decision rule: motion is reported only if the 1st-to-99th percentile range exceeds 9 x the noise level (22.5 cm here) for every processing choice and the field still stands out after a planar ramp is removed (same test, or a spread above 5 cm). Ideal noise gives 4.65 x; 44 real NISAR pairs without an earthquake gave 2.6 to 6.9 x. Smallest range found: 57.3 cm; after ramp removal: 47.9 cm.",
+      "69% of the window was masked: 21% coherence below 0.3, 36% water, 12% not reliably unwrapped, 0% no data.",
+      "The field's spread (21.4 cm) is far larger than atmosphere can explain, so it is attributed to motion and the noise level is set to 2.5 cm, the largest value this workflow accepts as atmosphere, rather than measured. Scatter over short distances (2.6 km tiles) is 1.08 cm.",
+      "Ionosphere: NASA's ionosphere phase screen spans 13.2 cm across the usable area. NASA ships it as a separate layer and does not apply it; here it WAS subtracted. Without it the robust spread would be 15.85 cm instead of 21.44 cm. NASA's own uncertainty for that estimate is 3.7 cm (median).",
+      "Planar ramp: a best-fit plane changes by +30.1 cm from west to east and -35.9 cm from south to north across the window. It was kept (a ramp can be real motion).",
+      "Noise from loss of coherence alone is about 0.20 cm per pixel (median coherence 0.43, 208 looks): the noise here is mostly atmospheric, not instrumental."
     ]
   },
   "caveats": [
     {
       "code": "line_of_sight",
-      "text": "This is motion along the radar's slanted line of sight, not vertical motion and not full 3-D motion. Horizontal and vertical movement are mixed together. The radar looked down at 41 degrees from vertical with the satellite to the east-north-east: one centimetre here is 0.75 x upward + +0.65 x eastward + +0.14 x northward motion."
+      "text": "This is motion along the radar's slanted line of sight, not vertical motion and not full 3-D motion. Horizontal and vertical movement are mixed together. The radar looked down at 43 degrees from vertical with the satellite to the west-north-west: one centimetre here is 0.73 x upward + -0.66 x eastward + +0.17 x northward motion."
     },
     {
       "code": "relative_motion",
@@ -609,22 +649,22 @@
     },
     {
       "code": "single_pair",
-      "text": "The pair spans only 12 days (13 June 2026 to 25 June 2026). It shows what moved between those two passes and cannot show slow motion, timing within the interval, or whether motion continued afterwards."
+      "text": "The pair spans only 12 days (17 June 2026 to 29 June 2026). It shows what moved between those two passes and cannot show slow motion, timing within the interval, or whether motion continued afterwards."
     }
   ],
   "receipt": {
     "granules": [
       {
-        "granule_id": "NISAR_L2_PR_GUNW_022_162_A_007_023_4000_SH_20260613T100656_20260613T100731_20260625T100655_20260625T100730_P05023_N_F_J_001",
-        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_022_162_A_007_023_4000_SH_20260613T100656_20260613T100731_20260625T100655_20260625T100730_P05023_N_F_J_001/NISAR_L2_PR_GUNW_022_162_A_007_023_4000_SH_20260613T100656_20260613T100731_20260625T100655_20260625T100730_P05023_N_F_J_001.h5",
+        "granule_id": "NISAR_L2_PR_GUNW_023_054_D_083_024_4000_SH_20260617T230235_20260617T230310_20260629T230235_20260629T230309_P05023_N_F_J_001",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_023_054_D_083_024_4000_SH_20260617T230235_20260617T230310_20260629T230235_20260629T230309_P05023_N_F_J_001/NISAR_L2_PR_GUNW_023_054_D_083_024_4000_SH_20260617T230235_20260617T230310_20260629T230235_20260629T230309_P05023_N_F_J_001.h5",
         "tier": "provisional",
         "product": "GUNW",
         "date": null,
-        "reference_date": "2026-06-13",
-        "secondary_date": "2026-06-25",
-        "track": 162,
-        "frame": 7,
-        "direction": "ascending",
+        "reference_date": "2026-06-17",
+        "secondary_date": "2026-06-29",
+        "track": 54,
+        "frame": 83,
+        "direction": "descending",
         "polarizations": [
           "HH"
         ]
@@ -643,17 +683,17 @@
           ],
           "pairs_found": 54
         },
-        "seconds": 0.28
+        "seconds": 0.52
       },
       {
         "name": "choose_pair",
         "params": {
           "rule": "requested reference date and track",
-          "granule_id": "NISAR_L2_PR_GUNW_022_162_A_007_023_4000_SH_20260613T100656_20260613T100731_20260625T100655_20260625T100730_P05023_N_F_J_001",
-          "reference_date": "2026-06-13",
-          "secondary_date": "2026-06-25",
-          "track": 162,
-          "frame": 7,
+          "granule_id": "NISAR_L2_PR_GUNW_023_054_D_083_024_4000_SH_20260617T230235_20260617T230310_20260629T230235_20260629T230309_P05023_N_F_J_001",
+          "reference_date": "2026-06-17",
+          "secondary_date": "2026-06-29",
+          "track": 54,
+          "frame": 83,
           "coverage_of_area": 1.0,
           "candidates": 54
         },
@@ -677,13 +717,19 @@
             2840
           ],
           "cols": [
-            1872,
-            2557
+            2115,
+            2800
           ],
-          "from_cache": true,
-          "io": {}
+          "from_cache": false,
+          "io": {
+            "requests": 31,
+            "megabytes": 37.6,
+            "fraction_of_file": 0.01637,
+            "network_seconds": 12.49,
+            "mode": "chunks"
+          }
         },
-        "seconds": 0.02
+        "seconds": 7.92
       },
       {
         "name": "phase_to_displacement",
@@ -703,11 +749,11 @@
             0.4
           ],
           "ionosphere_correction_applied": true,
-          "usable_pixels": 206703,
-          "usable_fraction": 0.4836,
-          "median_removed_cm": 25.104
+          "usable_pixels": 133784,
+          "usable_fraction": 0.313,
+          "median_removed_cm": 14.489
         },
-        "seconds": 0.05
+        "seconds": 0.06
       },
       {
         "name": "render",
@@ -723,41 +769,41 @@
           ],
           "fringe_cycle_cm": 12.1
         },
-        "seconds": 0.22
+        "seconds": 0.18
       }
     ],
     "software": {
       "name": "aletheia",
       "version": "0.1.0",
-      "commit": "1e15f91"
+      "commit": "b9d0b35"
     },
-    "generated_at": "2026-11-14T22:56:22Z",
-    "reproduce": "# pip install -e backend/   (needs an Earthdata Login in ~/.netrc)\nimport numpy as np\nfrom nisar_investigator import catalog, gunw\n\nbbox = (-68.45, 10.3, -67.95, 10.75)  # west, south, east, north\ngranule_id = \"NISAR_L2_PR_GUNW_022_162_A_007_023_4000_SH_20260613T100656_20260613T100731_20260625T100655_20260625T100730_P05023_N_F_J_001\"\npair = next(g for g in catalog.search(\"GUNW\", bbox=bbox) if g.granule_id == granule_id)\ncut = gunw.read_window(pair, bbox)  # reads only this window over HTTPS\n\nphase = cut.layers[\"unwrappedPhase\"] - cut.layers[\"ionospherePhaseScreen\"]  # NASA's ionosphere estimate, subtracted\nlos_cm = -cut.wavelength_m / (4 * np.pi) * phase * 100  # positive = toward the satellite\ncc, mask = cut.layers[\"connectedComponents\"], cut.layers[\"mask\"]\nok = (np.isfinite(los_cm) & (cut.layers[\"coherenceMagnitude\"] >= 0.3)\n      & (cc != 0) & (cc != gunw.CC_FILL) & gunw.valid_sample_mask(mask) & ~gunw.water_mask(mask))\nlos_cm = np.where(ok, los_cm - np.median(los_cm[ok]), np.nan)  # relative to the window median\n\np1, p5, p95, p99 = np.nanpercentile(los_cm, [1, 5, 95, 99])\nspread = 1.4826 * np.nanmedian(np.abs(los_cm - np.nanmedian(los_cm)))\nprint(f\"robust spread {spread:.2f} cm, 5th-95th percentile span {p95 - p5:.2f} cm, \"\n      f\"1st-99th percentile range {p99 - p1:.2f} cm, usable pixels {ok.mean():.1%}\")\n\n# or the whole workflow, with sensitivity analysis, maps and receipt:\nfrom nisar_investigator.schemas import MotionRequest\nfrom nisar_investigator.workflows.motion import run_motion\nresult = run_motion(MotionRequest(bbox=bbox, reference_date=\"2026-06-13\", track=162))\nprint(result.summary.headline)\n"
+    "generated_at": "2026-11-15T01:03:20Z",
+    "reproduce": "# pip install -e backend/   (needs an Earthdata Login in ~/.netrc)\nimport numpy as np\nfrom nisar_investigator import catalog, gunw\n\nbbox = (-68.45, 10.3, -67.95, 10.75)  # west, south, east, north\ngranule_id = \"NISAR_L2_PR_GUNW_023_054_D_083_024_4000_SH_20260617T230235_20260617T230310_20260629T230235_20260629T230309_P05023_N_F_J_001\"\npair = next(g for g in catalog.search(\"GUNW\", bbox=bbox) if g.granule_id == granule_id)\ncut = gunw.read_window(pair, bbox)  # reads only this window over HTTPS\n\nphase = cut.layers[\"unwrappedPhase\"] - cut.layers[\"ionospherePhaseScreen\"]  # NASA's ionosphere estimate, subtracted\nlos_cm = -cut.wavelength_m / (4 * np.pi) * phase * 100  # positive = toward the satellite\ncc, mask = cut.layers[\"connectedComponents\"], cut.layers[\"mask\"]\nok = (np.isfinite(los_cm) & (cut.layers[\"coherenceMagnitude\"] >= 0.3)\n      & (cc != 0) & (cc != gunw.CC_FILL) & gunw.valid_sample_mask(mask) & ~gunw.water_mask(mask))\nlos_cm = np.where(ok, los_cm - np.median(los_cm[ok]), np.nan)  # relative to the window median\n\np1, p5, p95, p99 = np.nanpercentile(los_cm, [1, 5, 95, 99])\nspread = 1.4826 * np.nanmedian(np.abs(los_cm - np.nanmedian(los_cm)))\nprint(f\"robust spread {spread:.2f} cm, 5th-95th percentile span {p95 - p5:.2f} cm, \"\n      f\"1st-99th percentile range {p99 - p1:.2f} cm, usable pixels {ok.mean():.1%}\")\n\n# or the whole workflow, with sensitivity analysis, maps and receipt:\nfrom nisar_investigator.schemas import MotionRequest\nfrom nisar_investigator.workflows.motion import run_motion\nresult = run_motion(MotionRequest(bbox=bbox, reference_date=\"2026-06-17\", track=54))\nprint(result.summary.headline)\n"
   },
   "downloads": [
     {
       "label": "Line-of-sight motion in cm (GeoTIFF)",
-      "url": "/api/artifacts/mot_20261114_ee8f7c5a/displacement_cm.tif",
+      "url": "/api/artifacts/mot_20261115_00dd8556/displacement_cm.tif",
       "format": "geotiff"
     },
     {
       "label": "Coherence (GeoTIFF)",
-      "url": "/api/artifacts/mot_20261114_ee8f7c5a/coherence.tif",
+      "url": "/api/artifacts/mot_20261115_00dd8556/coherence.tif",
       "format": "geotiff"
     },
     {
       "label": "Statistics for every processing choice (CSV)",
-      "url": "/api/artifacts/mot_20261114_ee8f7c5a/statistics.csv",
+      "url": "/api/artifacts/mot_20261115_00dd8556/statistics.csv",
       "format": "csv"
     },
     {
       "label": "Motion map (PNG)",
-      "url": "/api/artifacts/mot_20261114_ee8f7c5a/displacement.png",
+      "url": "/api/artifacts/mot_20261115_00dd8556/displacement.png",
       "format": "png"
     },
     {
       "label": "Full result with receipt (JSON)",
-      "url": "/api/artifacts/mot_20261114_ee8f7c5a/result.json",
+      "url": "/api/artifacts/mot_20261115_00dd8556/result.json",
       "format": "json"
     }
   ]

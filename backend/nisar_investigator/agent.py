@@ -27,7 +27,8 @@ from .schemas import (
 )
 
 MAX_TURNS = 14
-MAX_REPORT_ATTEMPTS = 3
+MAX_REPORT_ATTEMPTS = 4
+MAX_ANSWER_WORDS = 60
 
 SYSTEM_PROMPT = """\
 You are the analysis planner inside Aletheia, a research tool that answers questions about how \
@@ -257,6 +258,39 @@ def _result_digest(result: dict) -> dict:
     return out
 
 
+# ------------------------------------------------ dates named in a question
+
+_MONTHS = {m: i + 1 for i, m in enumerate(
+    ("january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"))}
+_MONTH = "|".join(_MONTHS)
+_DATE_PATTERNS = (
+    re.compile(r"\b(?P<y>20\d\d)-(?P<m>\d\d)-(?P<d>\d\d)\b"),
+    re.compile(rf"\b(?P<d>\d{{1,2}})(?:st|nd|rd|th)?\s+(?P<mon>{_MONTH})(?:\s+(?P<y>20\d\d))?\b", re.IGNORECASE),
+    re.compile(rf"\b(?P<mon>{_MONTH})\s+(?P<d>\d{{1,2}})(?:st|nd|rd|th)?(?:,?\s+(?P<y>20\d\d))?\b", re.IGNORECASE),
+)
+
+
+def question_dates(question: str) -> list[str]:
+    """Calendar dates a question names, as YYYY-MM-DD, in order. A date without a year takes the next year
+    mentioned after it ("19 June and 17 October 2026"), or the last year mentioned anywhere."""
+    years = [(m.start(), m.group()) for m in re.finditer(r"\b20\d\d\b", question)]
+    found: list[tuple[int, str]] = []
+    for pattern in _DATE_PATTERNS:
+        for m in pattern.finditer(question):
+            groups = m.groupdict()
+            month = int(groups["m"]) if groups.get("m") else _MONTHS[groups["mon"].lower()]
+            year = groups.get("y") or next((y for pos, y in years if pos > m.start()), years[-1][1] if years else None)
+            day = int(groups["d"])
+            if year is None or not (1 <= day <= 31 and 1 <= month <= 12):
+                continue
+            found.append((m.start(), f"{year}-{month:02d}-{day:02d}"))
+    ordered = []
+    for _, iso in sorted(found):
+        if iso not in ordered:
+            ordered.append(iso)
+    return ordered
+
+
 # ------------------------------------------------- traceability of figures
 
 _FIGURE = re.compile(
@@ -290,16 +324,19 @@ def _traceable(text_value: str, unit: str, pool: list[float]) -> bool:
     return False
 
 
+_UNIT = r"(km2|km\u00b2|square kilometres|square kilometers|dB|cm|mm|m|percent|%)(?![\w\u00b2])"
+# The first number of a written range shares the unit of the second: "0.2 to 1.1 km2", "between 5 and 7 cm".
+# A bare "and" is not enough ("on 2026-09-27 and 3.313 m" is a date followed by a value, not a range).
 _RANGE_START = re.compile(
-    r"(?<![\w.])(-?\d+(?:\.\d+)?)\s*(?:to|and|-|\u2013)\s*-?\d+(?:\.\d+)?\s*"
-    r"(km2|km\u00b2|square kilometres|square kilometers|dB|cm|mm|m|percent|%)(?![\w\u00b2])"
+    rf"(?:(?<![\w.\-])(-?\d+(?:\.\d+)?)\s*(?:to|\u2013|-)\s*-?\d+(?:\.\d+)?\s*{_UNIT}"
+    rf"|\bbetween\s+(-?\d+(?:\.\d+)?)\s+and\s+-?\d+(?:\.\d+)?\s*{_UNIT})"
 )
 _ANY_NUMBER = re.compile(r"(?<![\w.])-?\d+(?:\.\d+)?")
 
 
 def _figures(statement: str) -> list[tuple[str, str]]:
     """(value, unit) for every number that carries a unit, including the first number of "X to Y unit"."""
-    found = [(m.group(1), m.group(2)) for m in _RANGE_START.finditer(statement)]
+    found = [(m.group(1) or m.group(3), m.group(2) or m.group(4)) for m in _RANGE_START.finditer(statement)]
     found += [(m.group(1), m.group(2)) for m in _FIGURE.finditer(statement)]
     return found
 
@@ -355,6 +392,20 @@ class _Session:
     def check_coverage(self, _: dict):
         cov = catalog.coverage(bbox=self.req.bbox)
         digest = _coverage_digest(cov)
+        named = question_dates(self.req.question)
+        if named:
+            # Which stacks have the dates the question names: decided here, not left to the model.
+            holders = [
+                f"track {s['track']} ({s['direction']})"
+                for s in digest["stacks"]
+                if s["product"] == "GCOV" and all(any(a.get("date") == d for a in s["acquisitions"]) for d in named)
+            ]
+            digest["dates_named_in_question"] = named
+            digest["notes"].append(
+                f"The question names {' and '.join(named)}. "
+                + (f"Use these exact dates: {', '.join(holders)} has all of them."
+                   if holders else "No single backscatter stack has all of them: use the nearest dates on one stack and say so.")
+            )
         n = sum(len(s["acquisitions"]) for s in digest["stacks"] if s["product"] == "GCOV")
         return digest, cov.model_dump(mode="json"), f"{n} backscatter acquisitions in {len(digest['stacks'])} stacks"
 
@@ -411,6 +462,11 @@ class _Session:
         for digest in self.digests.values():  # the answer may draw on any result; only range ends trigger here
             for partial in half_quoted_ranges(a["answer"], digest, central_counts=False):
                 problems.append(f"In the answer: {partial}.")
+        if len(a["answer"].split()) > MAX_ANSWER_WORDS:
+            problems.append(
+                f"The answer has {len(a['answer'].split())} words. Keep it to one or two sentences (at most "
+                f"{MAX_ANSWER_WORDS} words) that answer the question; put the detail under observed."
+            )
         final_attempt = self.report_attempts >= MAX_REPORT_ATTEMPTS
         if problems and not final_attempt:
             return False, (
