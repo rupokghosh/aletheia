@@ -93,7 +93,7 @@ export function ResultView({ stored }: { stored: StoredResult }) {
       <h2 className={`mt-2 max-w-[65ch] [overflow-wrap:anywhere] text-ink ${headline.length > 160 ? "text-lg leading-snug tracking-tight" : "text-2xl"}`}>
         {headline}
       </h2>
-      {source !== "live" ? (
+      {source === "demo" ? (
         <div className="mt-3">
           <SourceBadge source={source} detailed />
         </div>

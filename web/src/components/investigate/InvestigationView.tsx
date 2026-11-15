@@ -138,7 +138,7 @@ export function InvestigationView() {
         <SourceBadge source={source} />
       </div>
       <h2 className="mt-1.5 max-w-[65ch] text-2xl [overflow-wrap:anywhere] text-ink">{investigation.question}</h2>
-      {source !== "live" ? (
+      {source === "demo" ? (
         <div className="mt-3">
           <SourceBadge source={source} detailed />
         </div>

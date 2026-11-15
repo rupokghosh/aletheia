@@ -106,7 +106,7 @@ function CoverageLine({ bbox, views }: { bbox: BBox; views: StackView[] }) {
   const summary = summarizeCoverage(views);
   return (
     <div className="mt-5">
-      {coverage.source && coverage.source !== "live" ? (
+      {coverage.source === "demo" ? (
         <div className="mb-2">
           <SourceBadge source={coverage.source} />
         </div>

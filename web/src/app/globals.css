@@ -244,6 +244,48 @@
 }
 
 /* MapLibre controls, restyled to match the cards. */
+/* What is behind the globe. The map canvas is see-through outside the planet, so this shows around it:
+   daylight that is brightest behind the planet and cooler toward the corners, a faint grid of dots further
+   out, and the glow of the atmosphere along the planet's edge. MapView keeps the three variables fitted to
+   the globe on screen. Before the map has drawn, the ball in the sea's colour stands in for it. */
+.globe-backdrop {
+  --globe-x: 60%;
+  --globe-y: 50%;
+  --globe-r: 280px;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at var(--globe-x) var(--globe-y),
+      #17365c calc(var(--globe-r) * 0.992),
+      rgb(74 139 240 / 0.5) var(--globe-r),
+      rgb(104 162 248 / 0.26) calc(var(--globe-r) * 1.07),
+      rgb(140 186 255 / 0.1) calc(var(--globe-r) * 1.2),
+      rgb(140 186 255 / 0) calc(var(--globe-r) * 1.42)
+    ),
+    radial-gradient(
+      circle at var(--globe-x) var(--globe-y),
+      #ffffff 0,
+      #f6f9fd calc(var(--globe-r) * 1.5),
+      #e9eff8 calc(var(--globe-r) * 2.6),
+      #dfe7f3 calc(var(--globe-r) * 4)
+    );
+}
+
+.globe-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgb(23 54 92 / 0.2) 1px, transparent 1.5px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(
+    circle at var(--globe-x) var(--globe-y),
+    transparent calc(var(--globe-r) * 1.25),
+    #000 calc(var(--globe-r) * 2.1)
+  );
+}
+
 .maplibregl-map {
   font-family: var(--font-sans);
 }

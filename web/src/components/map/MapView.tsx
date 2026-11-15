@@ -60,6 +60,7 @@ function webglAvailable(): boolean {
 export default function MapView() {
   const { state, dispatch } = useApp();
   const containerRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [supported] = useState(webglAvailable);
   const [tilesReady, setTilesReady] = useState(false);
@@ -107,6 +108,28 @@ export default function MapView() {
         ?.addEventListener("click", () => keepFolded.disconnect(), { capture: true, once: true });
     }
     instance.getCanvas().setAttribute("aria-label", `${APP_NAME} map. Arrow keys pan, plus and minus zoom.`);
+
+    // The backdrop behind the globe (its glow, and the ball shown while the map loads) is drawn in CSS and
+    // told here where the globe is on screen and how big, so it stays fitted as the camera moves.
+    const fitBackdrop = () => {
+      const backdrop = backdropRef.current;
+      if (!backdrop) return;
+      const centre = instance.getCenter();
+      const point = instance.project(centre);
+      const world = 512 * 2 ** instance.getZoom();
+      const sphere = world / (2 * Math.PI) / Math.cos((centre.lat * Math.PI) / 180);
+      // The camera looks at the sphere in perspective, from `focal` pixels above its nearest point, so the
+      // edge it sees is a circle a little smaller than the sphere itself.
+      const fov = (instance.getVerticalFieldOfView() * Math.PI) / 180;
+      const focal = (0.5 * instance.getCanvas().clientHeight) / Math.tan(fov / 2);
+      const seen = (focal * sphere) / Math.sqrt(focal * focal + 2 * focal * sphere);
+      backdrop.style.setProperty("--globe-x", `${point.x.toFixed(1)}px`);
+      backdrop.style.setProperty("--globe-y", `${point.y.toFixed(1)}px`);
+      backdrop.style.setProperty("--globe-r", `${seen.toFixed(1)}px`);
+    };
+    fitBackdrop();
+    instance.on("move", fitBackdrop);
+    instance.on("resize", fitBackdrop);
 
     instance.once("style.load", () => {
       if (!alive) return;
@@ -295,6 +318,7 @@ export default function MapView() {
 
   return (
     <div className="relative h-full w-full bg-bg">
+      <div ref={backdropRef} className="globe-backdrop" aria-hidden="true" />
       {/* MapLibre's stylesheet sets position: relative on this element, so it is sized by height, not by insets. */}
       <div ref={containerRef} className="h-full w-full" />
 
