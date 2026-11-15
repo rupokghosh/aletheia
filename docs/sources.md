@@ -1,6 +1,6 @@
 # Data, tools and references
 
-Every external resource this project uses. Kept current as the project grows.
+Every external resource this project uses.
 
 ## NASA data and services
 
@@ -24,6 +24,8 @@ NISAR is a joint mission of NASA and the Indian Space Research Organisation (ISR
 | USGS Earthquake Catalog (FDSN event service) | Context evidence: earthquakes near an area | https://earthquake.usgs.gov/fdsnws/event/1/ |
 | Water Survey of Canada real-time hydrometric data, Environment and Climate Change Canada | Context evidence and validation: river and lake levels | https://wateroffice.ec.gc.ca/ |
 | USGS National Water Information System, daily values | Context evidence: gauge height in the United States | https://waterdata.usgs.gov/ |
+| OpenStreetMap, as OpenMapTiles vector tiles served by OpenFreeMap (Positron style) | Base map under the radar picture | https://openfreemap.org/ |
+| Photon geocoder (komoot), built on OpenStreetMap data | Place search and the name of a clicked spot | https://photon.komoot.io/ |
 
 ## Software
 
@@ -35,12 +37,19 @@ NISAR is a joint mission of NASA and the Indian Space Research Organisation (ISR
 | Pillow | MIT-CMU | PNG and GeoTIFF output |
 | Requests | Apache-2.0 | HTTP range requests |
 | FastAPI, Uvicorn, Pydantic | MIT / BSD-3-Clause | HTTP API and data contract |
-| Anthropic Python SDK | MIT | Language-model calls for the investigator |
+| Anthropic Python SDK | MIT | Language-model calls for the investigator, when a Claude key is set |
+| Ollama, running the Qwen3 14B model (Alibaba Cloud, Apache-2.0) | MIT | The language model used locally, including for the worked examples |
+| MapLibre GL JS | BSD-3-Clause | The map and globe |
+| Next.js, React | MIT | Web interface |
+| Tailwind CSS | MIT | Styling |
+| Geist typeface (Vercel) | OFL-1.1 | Interface font |
+| emilkowalski/skills | MIT | Design guidance followed while building the interface; not redistributed |
 
-Web interface libraries are listed in `web/package.json`.
+The exact versions of the web libraries are in `web/package.json`.
 
 ## AI use
 
 Built with an AI coding agent (Claude Code) under the developer's direction. In the running application a
-language model (Claude) plans analyses and writes the report; it does not produce numbers. A server-side
-check rejects any report whose figures cannot be traced to a computed result.
+language model (Qwen3 14B run locally with Ollama for the worked examples; Claude is also supported) chooses
+the analyses and writes the report; it does not produce numbers. A server-side check sends back any report
+whose figures cannot be traced to a computed result.
