@@ -11,7 +11,7 @@ export function Root() {
       height={HEIGHT}
       fps={FPS}
       durationInFrames={TOTAL}
-      defaultProps={{ site: "" }}
+      defaultProps={{ site: "aletheia-five-tawny.vercel.app" }}
     />
   );
 }

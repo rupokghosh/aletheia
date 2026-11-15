@@ -7,12 +7,13 @@ export const HEIGHT = 1080;
 
 /** Where each shot starts and how long it runs. */
 export const SHOTS = {
-  opening: { from: 0, frames: 240 }, // the globe turns, a place is clicked, the camera flies down
-  ask: { from: 240, frames: 105 }, // the question is typed
-  answer: { from: 345, frames: 204 }, // the ground-movement answer
-  kamloops: { from: 549, frames: 150 }, // Kamloops Lake and its river gauge
-  receipts: { from: 699, frames: 108 }, // what the answer rests on
-  end: { from: 807, frames: 78 }, // the closing card
+  opening: { from: 0, frames: 226 }, // the globe turns, Venezuela is clicked, the camera flies down
+  ask: { from: 226, frames: 90 }, // the question is typed
+  venezuela: { from: 316, frames: 156 }, // the ground-movement answer
+  flight: { from: 472, frames: 96 }, // across the Caribbean to Florida
+  florida: { from: 568, frames: 160 }, // the floodplain after Hurricane Isaias, and its river gauge
+  receipts: { from: 728, frames: 87 }, // what the answer rests on
+  end: { from: 815, frames: 70 }, // the closing card
 } as const;
 
 export const TOTAL = SHOTS.end.from + SHOTS.end.frames;
@@ -20,10 +21,11 @@ export const TOTAL = SHOTS.end.from + SHOTS.end.frames;
 /** How many frames of each shot were filmed (see capture/capture.mjs). */
 export const FILMED = {
   opening: 240,
-  turn: 135,
+  turn: 135, // of which the turning globe; the flight down follows
+  openingSkipped: 14, // frames of the turn left out at the start
   ask: 105,
-  answerReveal: 40,
-  answerScroll: 64,
-  kamloops: 165,
+  venezuelaReveal: 40,
+  flight: 96,
+  florida: 176,
   receiptsScroll: 50,
 } as const;

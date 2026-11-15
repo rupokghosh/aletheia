@@ -12,11 +12,13 @@ import { clamp01, frameName, lerp, loadApp, openBrowser, photograph, shotDir, sm
 
 const QUESTION = "Did the ground move here during the earthquakes of 24 June 2026, and by how much?";
 const VENEZUELA = { bbox: [-68.45, 10.3, -67.95, 10.75], centre: [-68.2, 10.525], title: "The June 2026 earthquakes in Venezuela" };
-const KAMLOOPS = { title: "Kamloops Lake through the summer" };
+const FLORIDA = { title: "A Florida river floodplain in October" };
 // The map's margins while the side panel and the layers card are open (the app's own numbers), and the
 // camera the app settles on for the Venezuela area. The flight ends there and the answer is shown from there.
 const PANEL_MARGIN = { left: 492, right: 344, top: 0, bottom: 0 };
 const ARRIVE = { center: [-68.2, 10.525082080223626], zoom: 10.416665599935463 };
+// The camera the app settles on for the Choctawhatchee floodplain in Florida.
+const SETTLE = { center: [-85.96, 30.430018453743003], zoom: 12.247720841724545 };
 
 const wanted = process.argv.slice(2);
 const want = (name) => wanted.length === 0 || wanted.includes(name);
@@ -151,9 +153,76 @@ if (want("answer")) {
   meta.answer = { frames: REVEAL + SCROLL, reveal: REVEAL, scrolled: target };
   meta.profileChart = await rect("Motion across the area, south to north");
 
+}
+
+// -- 3. From Venezuela to Florida: lift off, cross the Caribbean, come down on the Choctawhatchee River ----
+if (want("florida")) {
+  console.log("flight");
+  await loadApp(page);
+  await page.getByText(VENEZUELA.title, { exact: true }).click();
+  await page.getByText("Answer", { exact: true }).waitFor({ timeout: 30_000 });
+  await page.waitForTimeout(1500);
+  await settle();
+  await film(() => window.__film.quiet());
+  await page.getByRole("button", { name: "Hide this panel" }).click();
+  await look({ ...ARRIVE, padding: PANEL_MARGIN });
+
+  // The camera rises as it leaves and sinks as it arrives, and covers ground in step with its height, so
+  // the land passes under it at an even pace.
+  const FLIGHT = 96;
+  const RISE = 4.8; // zoom levels given up at the top of the arc
+  const zoomAt = (t) => lerp(ARRIVE.zoom, SETTLE.zoom, smooth(t)) - RISE * Math.sin(Math.PI * t) ** 2;
+  const reach = Array.from({ length: FLIGHT }, (_, f) => 2 ** -zoomAt(f / (FLIGHT - 1)));
+  const whole = reach.reduce((a, b) => a + b, 0);
+  const dir = await shotDir("flight", { fresh: true });
+  let covered = 0;
+  for (let f = 0; f < FLIGHT; f += 1) {
+    if (f === FLIGHT / 2) {
+      // At the top of the arc both places are out of sight: start the app afresh and open the Florida example.
+      await loadApp(page);
+      await page.getByText(FLORIDA.title, { exact: true }).click();
+      await page.getByText("Answer", { exact: true }).waitFor({ timeout: 30_000 });
+      await page.waitForTimeout(1500);
+      await settle();
+      await film(() => window.__film.quiet());
+      meta.floridaLayers = await film(() => window.__film.overlay(0));
+      meta.floridaFit = await film(() => window.__film.camera());
+      await page.getByRole("button", { name: "Hide this panel" }).click();
+      await page.waitForTimeout(300);
+    }
+    const t = f / (FLIGHT - 1);
+    const along = covered / whole;
+    const names = Math.min(clamp01(1 - f / 10), 1) + clamp01((f - (FLIGHT - 22)) / 18); // names fade out on leaving, in on arriving
+    await film((k) => window.__film.labels(k), names);
+    await look({ center: [lerp(ARRIVE.center[0], SETTLE.center[0], along), lerp(ARRIVE.center[1], SETTLE.center[1], along)], zoom: zoomAt(t), padding: PANEL_MARGIN });
+    await take(dir, f);
+    covered += reach[f];
+  }
+  await film(() => window.__film.labels(1));
+  meta.flight = { frames: FLIGHT };
+
+  // The answer: the panel comes back, the change picture comes up, the camera drifts in.
+  console.log("florida");
+  await page.getByRole("button", { name: /Open$/ }).click();
+  await page.getByText("Answer", { exact: true }).waitFor({ timeout: 30_000 });
+  await look({ ...SETTLE, padding: PANEL_MARGIN });
+  await film(() => window.__film.overlay(0));
+  await settle();
+  meta.floridaFigure = await rect("River level at the gauge");
+  meta.floridaChart = await rect("River level at Choctawhatchee River near Bruce");
+  const florida = await shotDir("florida", { fresh: true });
+  const FRAMES = 176;
+  const REVEAL_FROM = 14;
+  const REVEAL = 40;
+  for (let f = 0; f < FRAMES; f += 1) {
+    await film((o) => window.__film.overlay(o), 0.9 * smooth(clamp01((f - REVEAL_FROM) / (REVEAL - 1))));
+    await look({ center: SETTLE.center, zoom: SETTLE.zoom + 0.14 * (f / (FRAMES - 1)), padding: PANEL_MARGIN });
+    await take(florida, f);
+  }
+  meta.florida = { frames: FRAMES, revealFrom: REVEAL_FROM, reveal: REVEAL };
+
   // The receipts: the same result opened in full, with what it took to compute and where it came from.
   console.log("receipts");
-  await film(() => window.__film.scrollTo(0));
   await page.getByText("Open this result on the map, with all its charts").first().click();
   await page.getByText("radar measurements", { exact: false }).first().waitFor({ timeout: 30_000 });
   await page.waitForTimeout(800);
@@ -175,32 +244,6 @@ if (want("answer")) {
   }
   meta.receipts = { frames: 1 + DOWN, scrolled: down };
   meta.sources = await rect("Sources and receipt");
-  meta.receiptText = await film(() => window.__film.scroller()?.innerText.slice(-1500));
-}
-
-// -- 3. Kamloops Lake: the change picture comes up while the camera drifts in ---------------------------
-if (want("kamloops")) {
-  console.log("kamloops");
-  await loadApp(page);
-  await page.getByText(KAMLOOPS.title, { exact: true }).click();
-  await page.getByText("Answer", { exact: true }).waitFor({ timeout: 30_000 });
-  await page.waitForTimeout(1500);
-  await settle();
-  await film(() => window.__film.quiet());
-  const home = await film(() => window.__film.camera());
-  meta.kamloopsCamera = home;
-  meta.kamloopsLayers = await film(() => window.__film.overlay(0));
-  meta.kamloopsFigure = await rect("River level at the gauge");
-  meta.gaugeChart = await rect("River level at Thompson River at Kamloops");
-  const dir = await shotDir("kamloops", { fresh: true });
-  const FRAMES = 165;
-  const REVEAL = 40;
-  for (let f = 0; f < FRAMES; f += 1) {
-    await film((o) => window.__film.overlay(o), 0.9 * smooth(clamp01(f / (REVEAL - 1))));
-    await look({ center: home.center, zoom: home.zoom + 0.16 * (f / (FRAMES - 1)) });
-    await take(dir, f);
-  }
-  meta.kamloops = { frames: FRAMES, reveal: REVEAL };
 }
 
 await browser.close();

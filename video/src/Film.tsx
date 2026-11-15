@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AbsoluteFill, Easing, interpolate, useCurrentFrame } from "remotion";
+import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { Camera, Caption, EndCard, Footage, type Framing, framingAt, land, Pointer, Strong, WHOLE } from "./parts";
 import { FILMED, SHOTS } from "./timeline";
 
@@ -27,33 +27,35 @@ function Shot({ from, frames, fadeIn, linger, children }: { from: number; frames
 
 function Opening() {
   const frame = useCurrentFrame();
+  const skipped = FILMED.openingSkipped;
+  const lift = FILMED.turn - skipped; // the film frame on which the flight down begins
   // Close on the globe, drifting back slowly, then one move out to the whole app.
   const framing = framingAt(
     frame,
     [
       [0, { ...GLOBE, scale: 2.2 }],
-      [122, WHOLE],
+      [108, WHOLE],
     ],
-    (t) => 0.1 * t + 0.9 * smoother((t - 0.52) / 0.48),
+    (t) => 0.1 * t + 0.9 * smoother((t - 0.48) / 0.52),
   );
-  const index = Math.min(frame, FILMED.opening - 1);
+  const index = Math.min(frame + skipped, FILMED.opening - 1);
   // As the flight begins the side panel folds away: the last frame of the turn fades off the first of the flight.
-  const panel = interpolate(frame, [FILMED.turn - 1, FILMED.turn + 9], [1, 0], clamp);
+  const panel = interpolate(frame, [lift - 1, lift + 9], [1, 0], clamp);
   return (
     <Camera framing={framing}>
       <Footage shot="opening" index={index} />
-      {frame >= FILMED.turn && panel > 0 ? (
+      {frame >= lift && panel > 0 ? (
         <AbsoluteFill style={{ opacity: panel }}>
           <Footage shot="opening" index={FILMED.turn - 1} />
         </AbsoluteFill>
       ) : null}
       <Pointer
         path={[
-          [102, 1480, 820],
-          [126, CLICK.x, CLICK.y],
-          [135, CLICK.x, CLICK.y],
+          [88, 1480, 820],
+          [112, CLICK.x, CLICK.y],
+          [lift, CLICK.x, CLICK.y],
         ]}
-        clicks={[130]}
+        clicks={[116]}
       />
     </Camera>
   );
@@ -61,15 +63,16 @@ function Opening() {
 
 function Ask() {
   const frame = useCurrentFrame();
-  const { from } = SHOTS.ask;
-  const local = Math.min(Math.max(frame - from, 0), FILMED.ask - 1);
+  const { from, frames } = SHOTS.ask;
+  const pace = (FILMED.ask - 1) / (frames - 1); // the typing is played a little faster than it was filmed
+  const local = Math.min(Math.max((frame - from) * pace, 0), FILMED.ask - 1);
   const framing = framingAt(
     frame,
     [
       [from - 4, { x: 600, y: 760, scale: 1.42 }],
-      [from + 104, { x: 600, y: 790, scale: 1.52 }],
+      [from + frames, { x: 600, y: 790, scale: 1.52 }],
     ],
-    Easing.linear,
+    (t) => t,
   );
   return (
     <Camera framing={framing}>
@@ -77,32 +80,26 @@ function Ask() {
       <Pointer
         path={[
           [from - 2, 520, 640],
-          [from + 9, TEXTAREA.x - 40, TEXTAREA.y],
-          [from + 80, TEXTAREA.x + 150, TEXTAREA.y + 60],
-          [from + 96, ASK_BUTTON.x, ASK_BUTTON.y],
-          [from + 104, ASK_BUTTON.x, ASK_BUTTON.y],
+          [from + 8, TEXTAREA.x - 40, TEXTAREA.y],
+          [from + 68, TEXTAREA.x + 150, TEXTAREA.y + 60],
+          [from + 82, ASK_BUTTON.x, ASK_BUTTON.y],
+          [from + frames, ASK_BUTTON.x, ASK_BUTTON.y],
         ]}
-        clicks={[from + 10, from + 99]}
+        clicks={[from + 9, from + 85]}
         scale={0.82}
       />
     </Camera>
   );
 }
 
-const ANSWER_PANEL: Framing = { x: 560, y: 430, scale: 1.72 };
-const ANSWER_CHARTS: Framing = { x: 560, y: 540, scale: 1.72 };
+const VENEZUELA_PANEL: Framing = { x: 560, y: 440, scale: 1.72 };
+const VENEZUELA_PANEL_END: Framing = { x: 560, y: 500, scale: 1.78 };
 
-function Answer() {
+function Venezuela() {
   const frame = useCurrentFrame();
-  const { from } = SHOTS.answer;
+  const { from, frames } = SHOTS.venezuela;
   const local = frame - from;
-  const scrollFrom = 128;
-  const index =
-    local < FILMED.answerReveal
-      ? Math.max(0, local)
-      : local < scrollFrom
-        ? FILMED.answerReveal - 1
-        : Math.min(FILMED.answerReveal + (local - scrollFrom), FILMED.answerReveal + FILMED.answerScroll - 1);
+  const index = Math.min(Math.max(local, 0), FILMED.venezuelaReveal - 1);
   const settle = framingAt(
     frame,
     [
@@ -112,13 +109,12 @@ function Answer() {
     land,
   );
   const framing =
-    local < 66
+    local < 58
       ? settle
       : framingAt(frame, [
-          [from + 66, WHOLE],
-          [from + 106, ANSWER_PANEL],
-          [from + scrollFrom, ANSWER_PANEL],
-          [from + scrollFrom + FILMED.answerScroll, ANSWER_CHARTS],
+          [from + 58, WHOLE],
+          [from + 98, VENEZUELA_PANEL],
+          [from + frames + 10, VENEZUELA_PANEL_END],
         ]);
   return (
     <Camera framing={framing}>
@@ -127,33 +123,42 @@ function Answer() {
   );
 }
 
-const LAKE_PANEL: Framing = { x: 565, y: 650, scale: 1.66 };
-const LAKE_PANEL_END: Framing = { x: 565, y: 690, scale: 1.74 };
-
-function Kamloops() {
+function Flight() {
   const frame = useCurrentFrame();
-  const { from, frames } = SHOTS.kamloops;
-  const local = frame - from;
-  const index = Math.min(Math.max(local, 0), FILMED.kamloops - 1);
-  const settle = framingAt(
-    frame,
-    [
-      [from - 10, { x: 960, y: 540, scale: 1.06 }],
-      [from + 14, WHOLE],
-    ],
-    land,
+  const local = frame - SHOTS.flight.from;
+  // Half-way, out of sight of both places, the app moves on to the Florida example and its map-layers card
+  // changes. The card of the frame before is faded off over it, so the change does not jump.
+  const swap = FILMED.flight / 2;
+  const old = interpolate(local, [swap - 1, swap + 11], [1, 0], clamp);
+  return (
+    <>
+      <Footage shot="flight" index={Math.min(Math.max(local, 0), FILMED.flight - 1)} />
+      {local >= swap && old > 0 ? (
+        <AbsoluteFill style={{ opacity: old, clipPath: "inset(92px 4px 44px 1584px round 20px)" }}>
+          <Footage shot="flight" index={swap - 1} />
+        </AbsoluteFill>
+      ) : null}
+    </>
   );
-  const framing =
-    local < 56
-      ? settle
-      : framingAt(frame, [
-          [from + 56, WHOLE],
-          [from + 96, LAKE_PANEL],
-          [from + frames + 10, LAKE_PANEL_END],
-        ]);
+}
+
+const FLORIDA_PANEL: Framing = { x: 565, y: 650, scale: 1.64 };
+const FLORIDA_PANEL_END: Framing = { x: 565, y: 690, scale: 1.72 };
+
+function Florida() {
+  const frame = useCurrentFrame();
+  const { from, frames } = SHOTS.florida;
+  const local = frame - from;
+  const index = Math.min(Math.max(local, 0), FILMED.florida - 1);
+  const framing = framingAt(frame, [
+    [from, WHOLE],
+    [from + 62, WHOLE],
+    [from + 102, FLORIDA_PANEL],
+    [from + frames + 8, FLORIDA_PANEL_END],
+  ]);
   return (
     <Camera framing={framing}>
-      <Footage shot="kamloops" index={index} />
+      <Footage shot="florida" index={index} />
     </Camera>
   );
 }
@@ -162,13 +167,12 @@ function Receipts() {
   const frame = useCurrentFrame();
   const { from, frames } = SHOTS.receipts;
   const local = frame - from;
-  const scrollFrom = 52;
+  const scrollFrom = 44;
   const index = local < scrollFrom ? 0 : Math.min(1 + (local - scrollFrom), FILMED.receiptsScroll);
   const framing = framingAt(frame, [
-    [from - 8, { x: 500, y: 320, scale: 1.92 }],
-    [from + scrollFrom, { x: 500, y: 335, scale: 2.02 }],
-    [from + scrollFrom + FILMED.receiptsScroll, { x: 530, y: 470, scale: 1.78 }],
-    [from + frames + 12, { x: 530, y: 480, scale: 1.82 }],
+    [from - 8, { x: 500, y: 330, scale: 1.9 }],
+    [from + scrollFrom, { x: 500, y: 350, scale: 2.0 }],
+    [from + frames + 12, { x: 530, y: 470, scale: 1.8 }],
   ]);
   return (
     <Camera framing={framing}>
@@ -179,7 +183,7 @@ function Receipts() {
 
 export function Film({ site }: { site: string }) {
   const frame = useCurrentFrame();
-  const { opening, ask, answer, kamloops, receipts, end } = SHOTS;
+  const { opening, ask, venezuela, flight, florida, receipts, end } = SHOTS;
   return (
     <AbsoluteFill style={{ background: "#fdfcf9" }}>
       <Shot from={opening.from} frames={opening.frames} fadeIn={0} linger={4}>
@@ -188,11 +192,14 @@ export function Film({ site }: { site: string }) {
       <Shot from={ask.from} frames={ask.frames} fadeIn={4} linger={8}>
         <Ask />
       </Shot>
-      <Shot from={answer.from} frames={answer.frames} fadeIn={8} linger={10}>
-        <Answer />
+      <Shot from={venezuela.from} frames={venezuela.frames} fadeIn={8} linger={10}>
+        <Venezuela />
       </Shot>
-      <Shot from={kamloops.from} frames={kamloops.frames} fadeIn={10} linger={8}>
-        <Kamloops />
+      <Shot from={flight.from} frames={flight.frames} fadeIn={10} linger={10}>
+        <Flight />
+      </Shot>
+      <Shot from={florida.from} frames={florida.frames} fadeIn={10} linger={8}>
+        <Florida />
       </Shot>
       <Shot from={receipts.from} frames={receipts.frames} fadeIn={8} linger={12}>
         <Receipts />
@@ -201,41 +208,48 @@ export function Film({ site }: { site: string }) {
         <EndCard frame={frame - end.from} site={site} />
       </Shot>
 
-      <Caption from={8} to={98}>
+      <Caption from={8} to={86}>
         The NISAR radar satellite passes over
         <br />
         <Strong>every place on Earth</Strong>, every 12 days.
       </Caption>
-      <Caption from={106} to={170} x={MAP_MIDDLE}>
+      <Caption from={92} to={150} x={MAP_MIDDLE}>
         Aletheia turns that radar into
         <br />
         answers anyone can check.
       </Caption>
-      <Caption from={178} to={236} x={MAP_MIDDLE}>
-        Pick any place.
+      <Caption from={158} to={222} x={MAP_MIDDLE}>
+        <Strong>24 June 2026.</Strong> Two major earthquakes
+        <br />
+        strike Venezuela.
       </Caption>
       <Caption from={ask.from + 6} to={ask.from + ask.frames - 6} x={1330}>
         Ask in plain words.
       </Caption>
-      <Caption from={answer.from + 6} to={answer.from + 68} x={MAP_MIDDLE}>
+      <Caption from={venezuela.from + 6} to={venezuela.from + 60} x={MAP_MIDDLE}>
         The answer is measured:
         <br />
         two radar passes, 12 days apart.
       </Caption>
-      <Caption from={answer.from + 108} to={answer.from + answer.frames - 8} x={BESIDE_PANEL}>
-        <Strong>48 to 66 cm</Strong> of ground movement
+      <Caption from={venezuela.from + 100} to={venezuela.from + venezuela.frames - 6} x={BESIDE_PANEL}>
+        <Strong>48 to 66 cm</Strong> of ground movement.
+      </Caption>
+      <Caption from={flight.from + 12} to={flight.from + flight.frames - 4} x={MAP_MIDDLE}>
+        <Strong>9 October 2026.</Strong> Hurricane Isaias
         <br />
-        around the 24 June earthquakes.
+        makes landfall in Florida.
       </Caption>
-      <Caption from={kamloops.from + 6} to={kamloops.from + 56} x={MAP_MIDDLE}>
-        Kamloops Lake, June to October 2026.
-      </Caption>
-      <Caption from={kamloops.from + 66} to={kamloops.from + kamloops.frames - 8} x={BESIDE_PANEL}>
-        The shore changed as the river fell <Strong>2.97 m</Strong>.
+      <Caption from={florida.from + 8} to={florida.from + 62} x={MAP_MIDDLE}>
+        Twelve days later, the Choctawhatchee
         <br />
-        An independent gauge agrees.
+        floodplain lights up on radar.
       </Caption>
-      <Caption from={receipts.from + 6} to={receipts.from + receipts.frames - 10} x={1420}>
+      <Caption from={florida.from + 104} to={florida.from + florida.frames - 6} x={BESIDE_PANEL}>
+        An independent river gauge agrees:
+        <br />
+        the water is up <Strong>1.82 m</Strong>.
+      </Caption>
+      <Caption from={receipts.from + 6} to={receipts.from + receipts.frames - 8} x={1420}>
         Every answer comes with receipts:
         <br />
         the files, the steps, the uncertainty.
