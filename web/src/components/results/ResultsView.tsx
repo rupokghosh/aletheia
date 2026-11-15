@@ -1,5 +1,6 @@
 "use client";
 
+import { EXAMPLES_ONLY } from "@/lib/api";
 import { useId } from "react";
 import { Button } from "@/components/ui/Button";
 import { ChevronLeftIcon } from "@/components/ui/icons";
@@ -35,7 +36,7 @@ export function ResultsView() {
           onClick={() => dispatch({ type: "view", view: investigation ? "investigation" : "home" })}
         >
           <ChevronLeftIcon className="shrink-0" />
-          <span className="truncate">{investigation ? `Back to: ${investigation.question}` : "Back to the area"}</span>
+          <span className="truncate">{investigation ? `Back to: ${investigation.question}` : EXAMPLES_ONLY ? "Back to the examples" : "Back to the area"}</span>
         </button>
         {state.results.length > 1 ? (
           <div>

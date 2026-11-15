@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect } from "react";
+import { EXAMPLES_ONLY } from "@/lib/api";
 import { APP_NAME } from "@/lib/config";
 import { isValidBBox } from "@/lib/geo";
 import { AppProvider, useApp } from "@/lib/store";
@@ -25,7 +26,7 @@ function useAreaFromUrl(): void {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const bbox = (params.get("bbox") ?? "").split(",").map(Number) as BBox;
-    if (bbox.length !== 4 || !isValidBBox(bbox)) return;
+    if (EXAMPLES_ONLY || bbox.length !== 4 || !isValidBBox(bbox)) return;
     dispatch({ type: "area", bbox, placeName: params.get("place") });
     dispatch({ type: "flyTo", bbox });
   }, [dispatch]);

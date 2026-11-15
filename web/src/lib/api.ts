@@ -33,6 +33,13 @@ export const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").trim().replace(/
 /** Where a piece of data came from. Only "live" is a measurement made for this request. */
 export type DataSource = "live" | "demo" | "showcase";
 
+/**
+ * A published site with no API address: the worked examples and the radar globe work, and analysing a new
+ * place is not offered (rather than answered from sample data, which is for reviewing the interface in
+ * development).
+ */
+export const EXAMPLES_ONLY = API_BASE === "" && process.env.NODE_ENV === "production";
+
 export interface Sourced<T> {
   data: T;
   source: DataSource;

@@ -1,5 +1,7 @@
 /** Product name. It is written here and nowhere else in the interface. */
 export const APP_NAME = "Aletheia";
+/** Where the source code is published. */
+export const REPO_URL = "https://github.com/rupokghosh/aletheia";
 
 export const APP_TAGLINE = "Ask a question about any place on Earth and get a radar-backed answer with receipts.";
 

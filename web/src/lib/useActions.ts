@@ -3,7 +3,7 @@
 /** Network actions: everything that calls the API client and feeds the result into the store. */
 
 import { useEffect, useEffectEvent, useMemo, useSyncExternalStore } from "react";
-import {
+import { EXAMPLES_ONLY,
   ApiError,
   checkApi,
   getApiMode,
@@ -63,7 +63,7 @@ export function useCoverageLoader(): void {
   const isLoaded = useEffectEvent((key: string) => coverage.key === key && coverage.status !== "error");
 
   useEffect(() => {
-    if (!bbox) return;
+    if (!bbox || EXAMPLES_ONLY) return;
     const key = bboxKey(bbox);
     if (isLoaded(key)) return;
     const controller = new AbortController();

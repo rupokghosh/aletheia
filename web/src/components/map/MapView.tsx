@@ -10,7 +10,7 @@ import {
   type MapMouseEvent,
 } from "maplibre-gl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { API_BASE, readPoint } from "@/lib/api";
+import { API_BASE, EXAMPLES_ONLY, readPoint } from "@/lib/api";
 import { APP_NAME, BASEMAP_STYLE_URL, LARGE_AREA_KM2 } from "@/lib/config";
 import { nearestPlaceName } from "@/lib/geocode";
 import { formatArea } from "@/lib/format";
@@ -214,7 +214,7 @@ export default function MapView() {
   const draftArea = useAreaLayer(map, { bbox: state.bbox, drawing: state.drawing, onDrawn, onCancel });
 
   // ---- picking a place: before any area exists, a click puts a square around the spot
-  const pickable = state.bbox === null && !state.drawing && state.view === "home";
+  const pickable = state.bbox === null && !state.drawing && state.view === "home" && !EXAMPLES_ONLY;
   useEffect(() => {
     if (!map || !pickable) return;
     const canvas = map.getCanvas();
@@ -280,7 +280,8 @@ export default function MapView() {
 
   // ---- reading one spot: click the map while a result is on it
   const [spot, setSpot] = useState<SpotState | null>(null);
-  const readableId = showResult && stored.result.status === "ok" && !state.drawing ? stored.result.id : null;
+  // Reading a spot asks the API, so it is not offered on the examples-only site.
+  const readableId = showResult && stored.result.status === "ok" && !state.drawing && !EXAMPLES_ONLY ? stored.result.id : null;
   // A reading belongs to the result it was taken from; switching results hides it without an effect.
   const visibleSpot = spot && spot.resultId === readableId ? spot : null;
 

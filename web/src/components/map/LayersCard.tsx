@@ -1,5 +1,6 @@
 "use client";
 
+import { EXAMPLES_ONLY } from "@/lib/api";
 import { useId, useState, type ReactNode } from "react";
 import { LegendView } from "@/components/results/LegendView";
 import { SourceBadge } from "@/components/ui/SourceBadge";
@@ -332,7 +333,7 @@ export function LayersCard({ stored, display, layers }: LayersCardProps) {
         </div>
       </header>
       <div className="scroll-quiet min-h-0 overflow-y-auto px-4 pb-4">
-        {hasLayers ? (
+        {hasLayers && !EXAMPLES_ONLY ? (
           <p className="mb-2 rounded-xl bg-raised px-3 py-2 text-[13px] leading-snug text-ink-2">
             Click anywhere on the map to read what the radar measured at that spot.
           </p>

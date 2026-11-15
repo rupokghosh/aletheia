@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { InvestigationView } from "@/components/investigate/InvestigationView";
 import { ResultsView } from "@/components/results/ResultsView";
 import { ChevronDownIcon } from "@/components/ui/icons";
-import { API_BASE, checkApi } from "@/lib/api";
+import { API_BASE, EXAMPLES_ONLY, checkApi } from "@/lib/api";
 import { APP_NAME } from "@/lib/config";
 import { useApp } from "@/lib/store";
 import { useApiMode } from "@/lib/useActions";
@@ -13,7 +13,7 @@ import { HomeView } from "./HomeView";
 /** Says plainly, at the top of the card, that nothing on screen is a live result. */
 function DemoNote() {
   const mode = useApiMode();
-  if (!mode.demo) return null;
+  if (!mode.demo || EXAMPLES_ONLY) return null;
   return (
     <p className="mx-5 mb-1 rounded-xl bg-raised px-3.5 py-2.5 text-sm leading-snug text-ink-2" role="status">
       <span className="mr-2 inline-block size-2 rounded-full bg-purple align-middle" aria-hidden="true" />

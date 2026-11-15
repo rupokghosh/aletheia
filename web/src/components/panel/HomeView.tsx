@@ -5,7 +5,8 @@ import { PlaceSearch } from "@/components/map/PlaceSearch";
 import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { DrawIcon } from "@/components/ui/icons";
-import { APP_TAGLINE } from "@/lib/config";
+import { EXAMPLES_ONLY } from "@/lib/api";
+import { APP_TAGLINE, REPO_URL } from "@/lib/config";
 import { plural } from "@/lib/format";
 import { loadShowcase, loadShowcaseIndex } from "@/lib/showcases";
 import { useApp } from "@/lib/store";
@@ -112,7 +113,9 @@ function Showcases() {
  */
 export function HomeView() {
   const { state, dispatch } = useApp();
-  const { bbox, drawing, results, investigation } = state;
+  const { drawing, results, investigation } = state;
+  // On the published examples-only site there is no area to work on: the start screen is always the examples.
+  const bbox = EXAMPLES_ONLY ? null : state.bbox;
   const reading = results.length + (investigation ? 1 : 0);
 
   return (
@@ -120,7 +123,16 @@ export function HomeView() {
       {bbox ? null : <p className="mb-4 max-w-[65ch] text-[17px] leading-snug text-ink">{APP_TAGLINE}</p>}
 
       <PlaceSearch />
-      {bbox ? null : (
+      {bbox ? null : EXAMPLES_ONLY ? (
+        <p className="mt-3 max-w-[65ch] text-[15px] leading-snug text-ink">
+          This page shows worked examples and NASA’s radar picture of the Earth. To analyse any place yourself, run
+          Aletheia from{" "}
+          <a href={REPO_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+            its repository
+          </a>
+          .
+        </p>
+      ) : (
         <p className="mt-3 max-w-[65ch] text-[15px] leading-snug text-ink">
           Click anywhere on the map to pick a place, or search for one above.
         </p>
@@ -130,7 +142,7 @@ export function HomeView() {
         <AreaView bbox={bbox} />
       ) : (
         <>
-          <details className="mt-2">
+          <details className="mt-2" hidden={EXAMPLES_ONLY}>
             <summary className="w-max text-sm text-ink-2 underline underline-offset-2 hover:text-ink">
               Choose the exact area yourself
             </summary>

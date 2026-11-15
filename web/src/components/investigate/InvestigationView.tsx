@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { CheckIcon, ChevronLeftIcon, CloseIcon } from "@/components/ui/icons";
+import { EXAMPLES_ONLY } from "@/lib/api";
 import { plural, prettyUnits } from "@/lib/format";
 import { useApp, type InvestigationState, type StepResult, type TimelineStep } from "@/lib/store";
 import { useActions } from "@/lib/useActions";
@@ -130,7 +131,7 @@ export function InvestigationView() {
     <article aria-label="Investigation" className="px-5 pb-6">
       <button type="button" className="flex items-center gap-1 text-sm text-ink-2 hover:text-ink" onClick={() => dispatch({ type: "view", view: "home" })}>
         <ChevronLeftIcon className="shrink-0" />
-        Back to the area
+        {EXAMPLES_ONLY ? "Back to the examples" : "Back to the area"}
       </button>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
