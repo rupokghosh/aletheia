@@ -245,10 +245,10 @@
 
 /* MapLibre controls, restyled to match the cards. */
 /* What is behind the globe. The map canvas is see-through outside the planet, so this shows around it:
-   daylight that is brightest behind the planet and cooler toward the corners, and the glow of the
-   atmosphere along the planet's edge, all as smooth gradients. MapView keeps the variables fitted to the
-   globe on screen. Nothing here is drawn where the planet is, so if the fit were ever off, the worst that
-   could happen is a glow slightly out of place. */
+   warm paper that is lightest behind the planet and deeper toward the corners, the glow of the atmosphere
+   along the planet's edge, and now and then a shooting star, all behind the planet and the cards. MapView
+   keeps the variables fitted to the globe on screen. Nothing here is drawn where the planet is, so if the
+   fit were ever off, the worst that could happen is a glow slightly out of place. */
 .globe-backdrop {
   --globe-x: 60%;
   --globe-y: 50%;
@@ -256,8 +256,9 @@
   --globe-glow: 0;
   position: absolute;
   inset: 0;
+  overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(circle at 60% 50%, #ffffff 0, #f7f9fd 28%, #ecf1f9 55%, #dfe7f3 100%);
+  background: radial-gradient(circle at 60% 50%, #fdfaf2 0, #f8f1e2 30%, #f1e7d3 60%, #e8dcc3 100%);
 }
 
 .globe-backdrop::before {
@@ -267,12 +268,55 @@
   opacity: var(--globe-glow);
   background: radial-gradient(
     circle at var(--globe-x) var(--globe-y),
-    rgb(74 139 240 / 0) calc(var(--globe-r) * 0.96),
-    rgb(74 139 240 / 0.5) var(--globe-r),
-    rgb(104 162 248 / 0.26) calc(var(--globe-r) * 1.07),
-    rgb(140 186 255 / 0.1) calc(var(--globe-r) * 1.2),
-    rgb(140 186 255 / 0) calc(var(--globe-r) * 1.42)
+    rgb(86 150 240 / 0) calc(var(--globe-r) * 0.96),
+    rgb(86 150 240 / 0.55) var(--globe-r),
+    rgb(150 192 246 / 0.3) calc(var(--globe-r) * 1.035),
+    rgb(255 253 246 / 0.7) calc(var(--globe-r) * 1.1),
+    rgb(255 253 246 / 0.32) calc(var(--globe-r) * 1.26),
+    rgb(255 253 246 / 0) calc(var(--globe-r) * 1.55)
   );
+}
+
+/* A shooting star: a thin streak that fades in, runs along its own length and fades out. ShootingStars
+   places one at a time, rarely. */
+.shooting-star {
+  position: absolute;
+  height: 1.5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgb(168 128 62 / 0), rgb(168 128 62 / 0.5) 62%, rgb(126 90 34 / 0.95));
+  transform-origin: left center;
+  opacity: 0;
+  animation: shooting-star var(--star-time, 1.3s) cubic-bezier(0.3, 0.1, 0.3, 1) forwards;
+}
+
+.shooting-star::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: #fffaf0;
+  box-shadow: 0 0 7px 2px rgb(206 160 82 / 0.75);
+}
+
+@keyframes shooting-star {
+  0% {
+    transform: rotate(var(--star-angle)) translateX(0) scaleX(0.25);
+    opacity: 0;
+  }
+  14% {
+    opacity: 1;
+  }
+  68% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--star-angle)) translateX(var(--star-travel)) scaleX(1);
+    opacity: 0;
+  }
 }
 
 .maplibregl-map {

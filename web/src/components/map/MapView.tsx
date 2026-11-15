@@ -19,6 +19,7 @@ import { activeResult, useApp } from "@/lib/store";
 import { useApiMode } from "@/lib/useActions";
 import type { BBox } from "@/lib/types";
 import { addAnchors, colourWater, destroyMap } from "./anchors";
+import { ShootingStars } from "./ShootingStars";
 import { LayersCard } from "./LayersCard";
 import { SpotCard, type SpotState } from "./SpotCard";
 import { SwipeHandle } from "./SwipeHandle";
@@ -326,7 +327,9 @@ export default function MapView() {
 
   return (
     <div className="relative h-full w-full bg-bg">
-      <div ref={backdropRef} className="globe-backdrop" aria-hidden="true" />
+      <div ref={backdropRef} className="globe-backdrop" aria-hidden="true">
+        <ShootingStars />
+      </div>
       {/* MapLibre's stylesheet sets position: relative on this element, so it is sized by height, not by insets. */}
       <div ref={containerRef} className="h-full w-full" />
 
