@@ -287,9 +287,11 @@ interface LayersCardProps {
  */
 export function LayersCard({ stored, display, layers }: LayersCardProps) {
   const hasLayers = stored !== null && display !== undefined && stored.result.layers.length > 0;
-  const [folded, setFolded] = useState<boolean | null>(null);
-  // Until the user decides: open when a result has layers, except on a phone, where it would cover the map.
-  const open = folded === null ? hasLayers && window.matchMedia("(min-width: 768px)").matches : !folded;
+  const [folded, setFolded] = useState(true);
+  // On a wide screen the card is always open, beside the map. On a phone it would cover the map, so there
+  // it stays a button until it is asked for.
+  const wide = window.matchMedia("(min-width: 768px)").matches;
+  const open = wide || !folded;
   const shown = layers.filter((layer) => layer.shown && layer.opacity > 0).length;
 
   if (!open) {
@@ -312,19 +314,21 @@ export function LayersCard({ stored, display, layers }: LayersCardProps) {
       aria-label="Map layers"
       className="popover pointer-events-auto flex max-h-full w-80 max-w-[calc(100vw-1.5rem)] origin-top-right flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-card"
     >
-      <header className="flex shrink-0 items-center justify-between gap-2 py-2 pr-2 pl-4">
+      <header className="flex min-h-[3.25rem] shrink-0 items-center justify-between gap-2 py-2 pr-2 pl-4">
         <h2 className="text-[15px] tracking-normal text-ink">On the map</h2>
         <div className="flex items-center gap-1.5">
           {stored && hasLayers ? <SourceBadge source={stored.source} /> : null}
-          <button
-            type="button"
-            className="press grid size-9 place-items-center rounded-full text-ink-2 hover:bg-raised hover:text-ink"
-            aria-label="Fold the layers card"
-            aria-expanded={true}
-            onClick={() => setFolded(true)}
-          >
-            <ChevronDownIcon />
-          </button>
+          {wide ? null : (
+            <button
+              type="button"
+              className="press grid size-9 place-items-center rounded-full text-ink-2 hover:bg-raised hover:text-ink"
+              aria-label="Fold the layers card"
+              aria-expanded={true}
+              onClick={() => setFolded(true)}
+            >
+              <ChevronDownIcon />
+            </button>
+          )}
         </div>
       </header>
       <div className="scroll-quiet min-h-0 overflow-y-auto px-4 pb-4">

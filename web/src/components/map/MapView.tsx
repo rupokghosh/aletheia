@@ -19,7 +19,6 @@ import { activeResult, useApp } from "@/lib/store";
 import { useApiMode } from "@/lib/useActions";
 import type { BBox } from "@/lib/types";
 import { addAnchors, colourWater, destroyMap } from "./anchors";
-import { Orbit } from "./Orbit";
 import { ShootingStars } from "./ShootingStars";
 import { LayersCard } from "./LayersCard";
 import { SpotCard, type SpotState } from "./SpotCard";
@@ -46,16 +45,19 @@ const NO_LAYERS: ReturnType<typeof mapLayersFor> = [];
 const PICK_KM = 10;
 /** Width of the floating card plus its margins: the map keeps this much clear on a wide screen. */
 const CARD_SPACE = 492;
+/** The layers card on the right (always open on a wide screen) plus its margins. */
+const LAYERS_SPACE = 344;
 
 /**
- * The part of the map the card covers, as camera padding: the left on a wide screen, the bottom
- * sheet on a phone. With it, "centred" means centred in the part of the map that can be seen.
+ * The part of the map the cards cover, as camera padding: the left and the right on a wide screen, the
+ * bottom sheet on a phone. With it, "centred" means centred in the part of the map that can be seen.
+ * The right-hand card is only allowed for when the window is wide enough to leave a useful map between.
  */
 function cardPadding(cardOpen: boolean) {
   const wide = window.matchMedia("(min-width: 768px)").matches;
   return {
     top: 0,
-    right: 0,
+    right: wide && window.innerWidth >= 1280 ? LAYERS_SPACE : 0,
     bottom: cardOpen && !wide ? Math.round(window.innerHeight * 0.5) : 0,
     left: cardOpen && wide ? CARD_SPACE : 0,
   };
@@ -123,8 +125,8 @@ export default function MapView() {
     }
     instance.getCanvas().setAttribute("aria-label", `${APP_NAME} map. Arrow keys pan, plus and minus zoom.`);
 
-    // What surrounds the globe (its glow and the orbit line) is drawn in CSS and told here where the globe
-    // is on screen and how big, so it stays fitted as the camera moves.
+    // The glow around the globe is drawn in CSS and told here where the globe is on screen and how big, so
+    // it stays fitted as the camera moves.
     const fitBackdrop = () => {
       const backdrop = stageRef.current;
       if (!backdrop) return;
@@ -146,10 +148,6 @@ export default function MapView() {
       backdrop.style.setProperty("--globe-y", `${point.y.toFixed(1)}px`);
       backdrop.style.setProperty("--globe-r", `${(visible ? seen : 0).toFixed(1)}px`);
       backdrop.style.setProperty("--globe-glow", visible ? "1" : "0");
-      // The orbit is shown only while the whole planet, with the orbit around it, is inside the window.
-      const reach = seen * 1.16;
-      const whole = visible && point.y - reach > 0 && point.y + reach < backdrop.clientHeight;
-      backdrop.style.setProperty("--orbit", whole ? "1" : "0");
     };
     fitBackdrop();
     instance.on("move", fitBackdrop);
@@ -343,12 +341,10 @@ export default function MapView() {
   return (
     <div ref={stageRef} className="globe-stage relative h-full w-full" data-sky={sky}>
       <div className="globe-backdrop" aria-hidden="true">
-        <Orbit half="back" />
         <ShootingStars />
       </div>
       {/* MapLibre's stylesheet sets position: relative on this element, so it is sized by height, not by insets. */}
       <div ref={containerRef} className="h-full w-full" />
-      <Orbit half="front" />
 
       {supported ? null : (
         <p className="absolute inset-0 grid place-items-center p-8 text-center text-[15px] text-ink-2 md:pl-[492px]" role="alert">

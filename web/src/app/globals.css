@@ -247,15 +247,13 @@
 /* MapLibre controls, restyled to match the cards. */
 /* What surrounds the globe. The map canvas is see-through outside the planet, so the backdrop shows around
    it: a wash of daylight, warm at one corner and cool at the other, brightest behind the planet; a thin
-   glow along the planet's edge; NISAR's orbit with the satellite moving along it; and now and then a
-   shooting star. MapView keeps the variables fitted to the globe on screen. Nothing solid is drawn where
+   glow along the planet's edge; and now and then a shooting star. MapView keeps the variables fitted to the globe on screen. Nothing solid is drawn where
    the planet is, so if the fit were ever off, the worst that could happen is a glow slightly out of place. */
 .globe-stage {
   --globe-x: 60%;
   --globe-y: 50%;
   --globe-r: 0px;
   --globe-glow: 0;
-  --orbit: 0;
 }
 
 .globe-backdrop {
@@ -292,43 +290,6 @@
     rgb(255 255 255 / 0.55) calc(var(--globe-r) * 1.08),
     rgb(255 255 255 / 0) calc(var(--globe-r) * 1.4)
   );
-}
-
-/* The orbit: an SVG in planet units (the planet's radius is 100 of its 300), sized and placed over the globe.
-   The copy behind the map is faint ink; the near half, drawn over the planet, is white so it reads on the
-   radar picture. Both fade out once the whole planet no longer fits in the window. */
-.orbit {
-  position: absolute;
-  left: calc(var(--globe-x) - var(--globe-r) * 1.5);
-  top: calc(var(--globe-y) - var(--globe-r) * 1.5);
-  width: calc(var(--globe-r) * 3);
-  height: calc(var(--globe-r) * 3);
-  overflow: visible;
-  pointer-events: none;
-  opacity: var(--orbit);
-  transition: opacity 300ms var(--ease-out);
-}
-
-.orbit-line {
-  fill: none;
-  stroke: rgb(25 25 25 / 0.3);
-  stroke-width: 1px;
-  vector-effect: non-scaling-stroke;
-}
-
-.orbit-front .orbit-line {
-  stroke: rgb(255 255 255 / 0.75);
-  stroke-width: 1.25px;
-}
-
-.orbit-craft-halo {
-  fill: rgb(49 124 255 / 0.22);
-}
-
-.orbit-craft-body {
-  fill: #fff;
-  stroke: var(--blue);
-  stroke-width: 1.6;
 }
 
 /* A shooting star: a thin streak that fades in, runs along its own length and fades out. ShootingStars
