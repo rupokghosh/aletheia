@@ -164,7 +164,10 @@ const NO_COVERAGE: CoverageState = { status: "idle", key: null, data: null, sour
  * two weeks after a pass, so the most recent complete 12-day sweep of the planet ends two weeks back.
  */
 function latestCompleteDay(): string {
-  return new Date(Date.now() - 14 * 86_400_000).toISOString().slice(0, 10);
+  // Snapped to a 7-day grid (days since 1970, UTC) so the server's cached tiles stay valid for a week.
+  // The server computes the same day (default_end in backend/nisar_investigator/radar_tiles.py).
+  const day = Math.floor(Date.now() / 86_400_000) - 14;
+  return new Date((day - (day % 7)) * 86_400_000).toISOString().slice(0, 10);
 }
 
 function initialState(): AppState {

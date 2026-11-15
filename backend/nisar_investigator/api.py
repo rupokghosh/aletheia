@@ -7,6 +7,7 @@ whether the analysis worked is in its `status` field ("ok", "unsupported" or "er
 
 from __future__ import annotations
 
+import datetime
 import importlib
 import importlib.util
 import os
@@ -18,12 +19,12 @@ import requests
 from fastapi import FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import __version__, agent, catalog, config, plain, provenance
+from . import __version__, agent, catalog, config, plain, provenance, radar_tiles
 from .schemas import ChangeRequest, Coverage, InvestigateRequest, MotionRequest, TimeSeriesRequest, WorkflowResult
 from .workflows import common
 from .workflows.change import run_change
@@ -200,6 +201,24 @@ def _run_motion(req: MotionRequest) -> WorkflowResult:
 async def motion(req: MotionRequest) -> WorkflowResult:
     """Workflow C: line-of-sight ground motion from a ready-made interferogram pair."""
     return await _run("motion", _run_motion, req)
+
+
+# ------------------------------------------------------- radar picture tiles
+
+
+@app.get("/api/tiles/radar/{z}/{x}/{y}")
+def radar_tile(z: int, x: int, y: int, end: str | None = None, days: int = 12) -> Response:
+    """One square of the radar picture of the Earth: `days` daily NASA pictures up to `end`, merged and cached.
+
+    A plain (not async) handler: it runs in the server's thread pool, and blocks only on a first fetch.
+    """
+    try:
+        last = datetime.date.fromisoformat(end) if end else radar_tiles.default_end()
+        picture = radar_tiles.tile(z, x, y, last, days)
+    except (ValueError, radar_tiles.TileError):
+        raise ApiError(404, "no_tile", "No such radar picture tile.") from None
+    headers = {"Cache-Control": radar_tiles.cache_control(last, picture.complete)}
+    return Response(content=picture.data, media_type=picture.media_type, headers=headers)
 
 
 # ------------------------------------------------------------ investigation

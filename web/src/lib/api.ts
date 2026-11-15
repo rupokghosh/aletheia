@@ -96,11 +96,32 @@ async function serverAnswers(): Promise<boolean> {
   }
 }
 
-/** Checks the configured API and sets the mode. Called once at start and by "Retry". */
+let recheck: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Checks the configured API and sets the mode. Called once at start and by "Retry".
+ * A server that is restarting or cold-starting must not flip the whole interface to sample data, so
+ * it is tried three times before giving up, and once given up it is tried again every 15 seconds and
+ * the interface returns to live data by itself when the server answers.
+ */
 export async function checkApi(): Promise<ApiMode> {
   if (!API_BASE || DEV_FIXTURES) return mode;
-  const reachable = await serverAnswers();
+  let reachable = false;
+  for (let attempt = 0; attempt < 3 && !reachable; attempt += 1) {
+    if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 2000));
+    reachable = await serverAnswers();
+  }
   setMode(reachable ? { demo: false, reason: null } : { demo: true, reason: "unreachable" });
+  if (!reachable && recheck === null) {
+    recheck = setInterval(() => {
+      void serverAnswers().then((answers) => {
+        if (!answers) return;
+        if (recheck !== null) clearInterval(recheck);
+        recheck = null;
+        setMode({ demo: false, reason: null });
+      });
+    }, 15_000);
+  }
   return mode;
 }
 

@@ -6,17 +6,17 @@ import {
   Map as MapLibreMap,
   Marker,
   NavigationControl,
-  ScaleControl,
   setWorkerUrl,
   type MapMouseEvent,
 } from "maplibre-gl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { readPoint } from "@/lib/api";
+import { API_BASE, readPoint } from "@/lib/api";
 import { APP_NAME, BASEMAP_STYLE_URL, LARGE_AREA_KM2 } from "@/lib/config";
 import { nearestPlaceName } from "@/lib/geocode";
 import { formatArea } from "@/lib/format";
 import { activeGroup, layerMode, mapLayersFor } from "@/lib/layers";
 import { activeResult, useApp } from "@/lib/store";
+import { useApiMode } from "@/lib/useActions";
 import type { BBox } from "@/lib/types";
 import { addAnchors, destroyMap } from "./anchors";
 import { LayersCard } from "./LayersCard";
@@ -87,8 +87,25 @@ export default function MapView() {
     instance.touchZoomRotate.disableRotation();
     instance.keyboard.disableRotation();
     instance.addControl(new NavigationControl({ showCompass: false }), "top-right");
-    instance.addControl(new ScaleControl({ unit: "metric", maxWidth: 120 }), "bottom-right");
-    instance.addControl(new AttributionControl({ compact: false }), "bottom-right");
+    // The map data licences (OpenStreetMap, OpenMapTiles) require the credits to stay reachable on the
+    // map, so they fold into a small "i" button instead of being removed.
+    // MapLibre opens them by itself as soon as the first map data arrives; they stay folded until
+    // the reader opens them with the button.
+    instance.addControl(new AttributionControl({ compact: true }), "bottom-right");
+    const credits = container.querySelector(".maplibregl-ctrl-attrib");
+    const foldCredits = () => {
+      if (!credits?.hasAttribute("open")) return;
+      credits.removeAttribute("open");
+      credits.classList.remove("maplibregl-compact-show");
+    };
+    const keepFolded = new MutationObserver(foldCredits);
+    if (credits) {
+      foldCredits();
+      keepFolded.observe(credits, { attributes: true, attributeFilter: ["open"] });
+      credits
+        .querySelector(".maplibregl-ctrl-attrib-button")
+        ?.addEventListener("click", () => keepFolded.disconnect(), { capture: true, once: true });
+    }
     instance.getCanvas().setAttribute("aria-label", `${APP_NAME} map. Arrow keys pan, plus and minus zoom.`);
 
     instance.once("style.load", () => {
@@ -111,6 +128,7 @@ export default function MapView() {
 
     return () => {
       alive = false;
+      keepFolded.disconnect();
       clearInterval(paintWhileHidden);
       setMap(null);
       destroyMap(instance);
@@ -148,7 +166,8 @@ export default function MapView() {
   }, [map, pickable, dispatch]);
 
   // ---- reference imagery
-  useGibsLayer(map, state.gibs);
+  const apiMode = useApiMode();
+  useGibsLayer(map, state.gibs, !apiMode.demo && API_BASE !== "" ? API_BASE : null);
 
   // ---- result layers: on the map while a result or the investigation that produced it is being read
   const stored = activeResult(state);
