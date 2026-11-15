@@ -29,3 +29,6 @@ reports/
 # Third-party design skills (emilkowalski/skills, MIT): used as guidance, not redistributed here
 .claude/skills/
 .vercel
+
+# Submission working files: the film is too large for the repository
+submission/*.mp4

@@ -49,6 +49,14 @@ NISAR is a joint mission of NASA and the Indian Space Research Organisation (ISR
 
 The exact versions of the web libraries are in `web/package.json`.
 
+## Event facts in the demo film
+
+| Fact | Source |
+|---|---|
+| The 24 June 2026 earthquakes in Venezuela as the most destructive disaster of the first half of 2026 | Munich Re, natural catastrophe review for the first half of 2026 |
+| Earthquake magnitudes, dates and distances | USGS Earthquake Catalog, as shown in the app |
+| Hurricane Isaias making landfall near Destin, Florida, on 9 October 2026 | US National Weather Service Mobile, Isaias impact summary; WLOX News, 10 October 2026 |
+
 ## AI use
 
 Built with an AI coding agent (Claude Code) under the developer's direction. In the running application a

@@ -4,6 +4,8 @@ Ask a question about any place on Earth and get a radar-backed answer with recei
 
 Built for the NASA Space Apps Challenge 2026, challenge **Dancing with the SARs**.
 
+Live: https://aletheia-five-tawny.vercel.app
+
 Pick a place, ask in plain language or choose an analysis, and Aletheia computes the answer from real
 NISAR radar data: what changed between two dates, how a place behaved over time, or whether the ground
 moved. Every result comes with its sources, its uncertainty, its caveats and the code to reproduce it.
