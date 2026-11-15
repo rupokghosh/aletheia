@@ -25,10 +25,10 @@ const SEA_LABEL = "#c9d6ee";
 
 export function colourWater(map: MapLibreMap): void {
   // Seen from far away, land the radar picture does not cover (a pass NASA has not published yet) would
-  // show as near-white holes in the planet. A quiet slate reads as "no picture here"; zoomed in, the base
-  // map keeps its normal pale colour.
+  // show as near-white holes in the planet. A quiet grey-green reads as "no picture here"; zoomed in, the
+  // base map keeps its normal pale colour.
   if (map.getLayer("background")) {
-    map.setPaintProperty("background", "background-color", ["interpolate", ["linear"], ["zoom"], 2.5, "#3d4a61", 5, "rgb(242, 243, 240)"]);
+    map.setPaintProperty("background", "background-color", ["interpolate", ["linear"], ["zoom"], 2.5, "#b9c2b6", 5, "rgb(242, 243, 240)"]);
   }
   if (map.getLayer("water")) map.setPaintProperty("water", "fill-color", SEA);
   if (map.getLayer("waterway")) map.setPaintProperty("waterway", "line-color", SEA);

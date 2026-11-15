@@ -19,8 +19,8 @@ import { activeResult, useApp } from "@/lib/store";
 import { useApiMode } from "@/lib/useActions";
 import type { BBox } from "@/lib/types";
 import { addAnchors, colourWater, destroyMap } from "./anchors";
+import { Orbit } from "./Orbit";
 import { ShootingStars } from "./ShootingStars";
-import { StarField } from "./StarField";
 import { LayersCard } from "./LayersCard";
 import { SpotCard, type SpotState } from "./SpotCard";
 import { SwipeHandle } from "./SwipeHandle";
@@ -30,13 +30,13 @@ import { useResultLayers } from "./useResultLayers";
 
 /** MapLibre 6 loads its worker as a separate module; scripts/copy-maplibre-worker.mjs puts it here. */
 const WORKER_URL = "/vendor/maplibre-gl-worker.mjs";
-/** What is drawn behind the globe: night by default; ?sky=dawn or ?sky=paper in the address shows the others. */
-type Sky = "paper" | "night" | "dawn";
-const DEFAULT_SKY: Sky = "night";
+/** What is drawn behind the globe: a two-tone wash of daylight by default; ?sky=aura shows the pastel one. */
+type Sky = "day" | "aura";
+const DEFAULT_SKY: Sky = "day";
 
 function chosenSky(): Sky {
   const asked = new URLSearchParams(window.location.search).get("sky");
-  return asked === "paper" || asked === "night" || asked === "dawn" ? asked : DEFAULT_SKY;
+  return asked === "day" || asked === "aura" ? asked : DEFAULT_SKY;
 }
 
 /** The highest latitude of the Web Mercator world, where MapLibre stops scaling its globe. */
@@ -73,7 +73,7 @@ function webglAvailable(): boolean {
 export default function MapView() {
   const { state, dispatch } = useApp();
   const containerRef = useRef<HTMLDivElement>(null);
-  const backdropRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [supported] = useState(webglAvailable);
   const [sky] = useState(chosenSky);
@@ -123,10 +123,10 @@ export default function MapView() {
     }
     instance.getCanvas().setAttribute("aria-label", `${APP_NAME} map. Arrow keys pan, plus and minus zoom.`);
 
-    // The backdrop behind the globe (its glow, and the ball shown while the map loads) is drawn in CSS and
-    // told here where the globe is on screen and how big, so it stays fitted as the camera moves.
+    // What surrounds the globe (its glow and the orbit line) is drawn in CSS and told here where the globe
+    // is on screen and how big, so it stays fitted as the camera moves.
     const fitBackdrop = () => {
-      const backdrop = backdropRef.current;
+      const backdrop = stageRef.current;
       if (!backdrop) return;
       const centre = instance.getCenter();
       const point = instance.project(centre);
@@ -146,6 +146,10 @@ export default function MapView() {
       backdrop.style.setProperty("--globe-y", `${point.y.toFixed(1)}px`);
       backdrop.style.setProperty("--globe-r", `${(visible ? seen : 0).toFixed(1)}px`);
       backdrop.style.setProperty("--globe-glow", visible ? "1" : "0");
+      // The orbit is shown only while the whole planet, with the orbit around it, is inside the window.
+      const reach = seen * 1.16;
+      const whole = visible && point.y - reach > 0 && point.y + reach < backdrop.clientHeight;
+      backdrop.style.setProperty("--orbit", whole ? "1" : "0");
     };
     fitBackdrop();
     instance.on("move", fitBackdrop);
@@ -337,19 +341,17 @@ export default function MapView() {
   );
 
   return (
-    <div className="relative h-full w-full">
-      <div ref={backdropRef} className="globe-backdrop" data-sky={sky} aria-hidden="true">
-        {sky === "paper" ? null : <StarField />}
+    <div ref={stageRef} className="globe-stage relative h-full w-full" data-sky={sky}>
+      <div className="globe-backdrop" aria-hidden="true">
+        <Orbit half="back" />
         <ShootingStars />
       </div>
       {/* MapLibre's stylesheet sets position: relative on this element, so it is sized by height, not by insets. */}
       <div ref={containerRef} className="h-full w-full" />
+      <Orbit half="front" />
 
       {supported ? null : (
-        <p
-          className={`absolute inset-0 grid place-items-center p-8 text-center text-[15px] md:pl-[492px] ${sky === "paper" ? "text-ink-2" : "text-white/80"}`}
-          role="alert"
-        >
+        <p className="absolute inset-0 grid place-items-center p-8 text-center text-[15px] text-ink-2 md:pl-[492px]" role="alert">
           The map needs WebGL 2, which this browser or device does not provide. Results, charts and receipts still
           work; enter the area as coordinates.
         </p>
