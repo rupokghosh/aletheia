@@ -1,0 +1,25 @@
+{
+  "name": "aletheia-film",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The 30-second demo film for Aletheia, built from captures of the running app.",
+  "scripts": {
+    "capture": "node capture/capture.mjs",
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Film out/aletheia-demo.mp4"
+  },
+  "packageManager": "pnpm@12.4.1",
+  "dependencies": {
+    "@remotion/cli": "4.0.543",
+    "@remotion/google-fonts": "4.0.543",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "remotion": "4.0.543"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "playwright-core": "1.65.1",
+    "typescript": "^7.0.2"
+  }
+}

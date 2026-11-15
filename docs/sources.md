@@ -44,6 +44,8 @@ NISAR is a joint mission of NASA and the Indian Space Research Organisation (ISR
 | Tailwind CSS | MIT | Styling |
 | Geist typeface (Vercel) | OFL-1.1 | Interface font |
 | emilkowalski/skills | MIT | Design guidance followed while building the interface; not redistributed |
+| Remotion | Remotion Licence (free for individuals) | Editing the demo film (`video/`) |
+| Playwright | Apache-2.0 | Filming the running application frame by frame for the demo film |
 
 The exact versions of the web libraries are in `web/package.json`.
 
@@ -53,3 +55,6 @@ Built with an AI coding agent (Claude Code) under the developer's direction. In 
 language model (Qwen3 14B run locally with Ollama for the worked examples; Claude is also supported) chooses
 the analyses and writes the report; it does not produce numbers. A server-side check sends back any report
 whose figures cannot be traced to a computed result.
+
+The demo film was put together the same way. Every picture in it is the running application, photographed
+frame by frame (`video/capture/`); none of its footage is AI-generated.
