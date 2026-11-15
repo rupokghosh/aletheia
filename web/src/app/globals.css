@@ -68,7 +68,8 @@
   }
 
   body {
-    background: var(--bg);
+    /* the colour of the night sky behind the globe, so the page never shows pale around or before it */
+    background: #060a1b;
     color: var(--ink);
     font-family: var(--font-sans);
     font-size: 16px;

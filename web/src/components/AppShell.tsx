@@ -13,7 +13,7 @@ import { SidePanel } from "./panel/SidePanel";
 const MapView = dynamic(() => import("./map/MapView"), {
   ssr: false,
   loading: () => (
-    <p className="grid h-full place-items-center text-sm text-ink-3" role="status">
+    <p className="grid h-full place-items-center text-sm text-white/60" role="status">
       Loading the map
     </p>
   ),
@@ -39,7 +39,7 @@ function Workspace() {
   useAreaFromUrl();
 
   return (
-    <div className="relative h-dvh overflow-hidden bg-bg">
+    <div className="relative h-dvh overflow-hidden bg-[#060a1b]">
       <main className="absolute inset-0" aria-label="Map">
         <MapView />
       </main>

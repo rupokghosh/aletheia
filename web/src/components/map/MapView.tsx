@@ -30,9 +30,9 @@ import { useResultLayers } from "./useResultLayers";
 
 /** MapLibre 6 loads its worker as a separate module; scripts/copy-maplibre-worker.mjs puts it here. */
 const WORKER_URL = "/vendor/maplibre-gl-worker.mjs";
-/** What is drawn behind the globe. Chosen with ?sky= in the address while the look is being decided. */
+/** What is drawn behind the globe: night by default; ?sky=dawn or ?sky=paper in the address shows the others. */
 type Sky = "paper" | "night" | "dawn";
-const DEFAULT_SKY: Sky = "paper";
+const DEFAULT_SKY: Sky = "night";
 
 function chosenSky(): Sky {
   const asked = new URLSearchParams(window.location.search).get("sky");
@@ -337,7 +337,7 @@ export default function MapView() {
   );
 
   return (
-    <div className="relative h-full w-full bg-bg">
+    <div className="relative h-full w-full">
       <div ref={backdropRef} className="globe-backdrop" data-sky={sky} aria-hidden="true">
         {sky === "paper" ? null : <StarField />}
         <ShootingStars />
@@ -346,7 +346,10 @@ export default function MapView() {
       <div ref={containerRef} className="h-full w-full" />
 
       {supported ? null : (
-        <p className="absolute inset-0 grid place-items-center p-8 text-center text-[15px] text-ink-2 md:pl-[492px]" role="alert">
+        <p
+          className={`absolute inset-0 grid place-items-center p-8 text-center text-[15px] md:pl-[492px] ${sky === "paper" ? "text-ink-2" : "text-white/80"}`}
+          role="alert"
+        >
           The map needs WebGL 2, which this browser or device does not provide. Results, charts and receipts still
           work; enter the area as coordinates.
         </p>

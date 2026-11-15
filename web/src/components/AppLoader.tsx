@@ -10,8 +10,8 @@ import { APP_NAME } from "@/lib/config";
 const AppShell = dynamic(() => import("./AppShell"), {
   ssr: false,
   loading: () => (
-    <div className="grid h-dvh place-items-center bg-bg" role="status">
-      <p className="text-[15px] text-ink-2">Loading {APP_NAME}</p>
+    <div className="grid h-dvh place-items-center bg-[#060a1b]" role="status">
+      <p className="text-[15px] text-white/60">Loading {APP_NAME}</p>
     </div>
   ),
 });

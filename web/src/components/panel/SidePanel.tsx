@@ -49,10 +49,16 @@ export function SidePanel() {
       <header className="flex shrink-0 items-center justify-between gap-2 py-3 pr-3 pl-5">
         <button
           type="button"
-          className="rounded-md text-[17px] tracking-tight text-ink"
+          className="flex items-center gap-2 rounded-md text-[19px] tracking-tight text-ink"
           onClick={() => dispatch({ type: "view", view: "home" })}
           aria-label={`${APP_NAME}: back to the start`}
         >
+          {/* A disc coming out from behind another: un-hiddenness, which is what the name means. */}
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+            <circle cx="10" cy="10" r="9" fill="var(--ink)" />
+            <circle cx="13.2" cy="7.4" r="6.2" fill="var(--panel)" />
+            <circle cx="13.2" cy="7.4" r="2.6" fill="var(--blue)" />
+          </svg>
           {APP_NAME}
         </button>
         <button type="button" className={ICON_BUTTON} aria-label="Hide this panel" title="Hide this panel" onClick={() => dispatch({ type: "panel", open: false })}>
