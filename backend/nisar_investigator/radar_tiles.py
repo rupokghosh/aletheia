@@ -251,7 +251,9 @@ def tile(z: int, x: int, y: int, end: date, days: int = 12) -> Tile:
 def cache_control(end: date, complete: bool = True) -> str:
     if not complete:
         return "no-store"  # a day was missing: let the browser ask again
-    return "public, max-age=2592000, immutable" if is_settled(end) else "public, max-age=3600"
+    # s-maxage lets a CDN in front of the API keep the tile too, so a hosted instance with an empty disk
+    # is asked for each settled tile once, not once per visitor
+    return "public, max-age=2592000, s-maxage=2592000, immutable" if is_settled(end) else "public, max-age=3600"
 
 
 def default_end() -> date:

@@ -239,7 +239,7 @@ def test_layers_scrub_through_the_best_populated_stack(archive):
     assert [layer.default_visible for layer in result.layers] == [False] * 5 + [True]
     artifacts = config.artifacts_dir() / result.id
     for layer in result.layers:
-        assert (artifacts / layer.url.rsplit("/", 1)[1]).stat().st_size > 0
+        assert (artifacts / layer.url.partition("?")[0].rsplit("/", 1)[1]).stat().st_size > 0
     assert result.stats["images"] == {"track": 77, "polarization": "HH", "count": 6}
 
 

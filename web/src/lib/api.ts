@@ -3,7 +3,8 @@
  *
  * DEMO-DATA SWITCH
  * ----------------
- * `NEXT_PUBLIC_API_URL` is the base URL of the backend (for example http://localhost:8000).
+ * `NEXT_PUBLIC_API_URL` is the base URL of the backend (for example http://localhost:8000), or the word
+ * `same-origin` when the API is served from the site's own address under /api (as on Vercel).
  *  - Unset or empty: the client starts in demo-data mode and answers from fixtures in src/mocks.
  *  - Set, but the server cannot be reached: the client switches to demo-data mode and says so.
  *  - Set and reachable: every response is live. An HTTP error from a reachable server is shown
@@ -28,7 +29,12 @@ import {
   type WorkflowResult,
 } from "./types";
 
-export const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").trim().replace(/\/+$/, "");
+const CONFIGURED = (process.env.NEXT_PUBLIC_API_URL ?? "").trim().replace(/\/+$/, "");
+/** Whether an API address is set at all. */
+export const API_CONFIGURED = CONFIGURED !== "";
+/** The address requests are sent to. For `same-origin` it is this site's own address, known only in the browser. */
+export const API_BASE =
+  CONFIGURED === "same-origin" ? (typeof window === "undefined" ? "" : window.location.origin) : CONFIGURED;
 
 /** Where a piece of data came from. Only "live" is a measurement made for this request. */
 export type DataSource = "live" | "demo" | "showcase";
@@ -38,7 +44,7 @@ export type DataSource = "live" | "demo" | "showcase";
  * place is not offered (rather than answered from sample data, which is for reviewing the interface in
  * development).
  */
-export const EXAMPLES_ONLY = API_BASE === "" && process.env.NODE_ENV === "production";
+export const EXAMPLES_ONLY = !API_CONFIGURED && process.env.NODE_ENV === "production";
 
 export interface Sourced<T> {
   data: T;
@@ -74,7 +80,7 @@ const DEV_FIXTURES =
   new URLSearchParams(window.location.search).has("data");
 
 let mode: ApiMode =
-  API_BASE && !DEV_FIXTURES ? { demo: false, reason: null } : { demo: true, reason: "unconfigured" };
+  API_CONFIGURED && !DEV_FIXTURES ? { demo: false, reason: null } : { demo: true, reason: "unconfigured" };
 const listeners = new Set<() => void>();
 
 function setMode(next: ApiMode): void {
@@ -97,10 +103,40 @@ async function serverAnswers(): Promise<boolean> {
   const timeout = AbortSignal.timeout(5000);
   try {
     await fetch(`${API_BASE}/api/health`, { mode: "no-cors", cache: "no-store", signal: timeout });
+    void learnAbilities();
     return true;
   } catch {
     return false;
   }
+}
+
+// What the server says it can do. Questions in plain language need a language model behind the API; where
+// there is none (a hosted API with no model key), the interface does not offer them.
+let canAsk = true;
+const abilityListeners = new Set<() => void>();
+
+async function learnAbilities(): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE}/api/health`, { cache: "no-store", signal: AbortSignal.timeout(5000) });
+    const body = asRecord(await response.json());
+    const available = asRecord(body?.investigator)?.available;
+    const next = available !== false; // an older server that does not say is taken to be able
+    if (next !== canAsk) {
+      canAsk = next;
+      abilityListeners.forEach((listener) => listener());
+    }
+  } catch {
+    // unreadable (for example blocked by CORS): leave the offer as it is; asking will report the problem
+  }
+}
+
+export function getCanAsk(): boolean {
+  return canAsk;
+}
+
+export function subscribeCanAsk(listener: () => void): () => void {
+  abilityListeners.add(listener);
+  return () => abilityListeners.delete(listener);
 }
 
 let recheck: ReturnType<typeof setInterval> | null = null;
@@ -112,7 +148,7 @@ let recheck: ReturnType<typeof setInterval> | null = null;
  * the interface returns to live data by itself when the server answers.
  */
 export async function checkApi(): Promise<ApiMode> {
-  if (!API_BASE || DEV_FIXTURES) return mode;
+  if (!API_CONFIGURED || DEV_FIXTURES) return mode;
   let reachable = false;
   for (let attempt = 0; attempt < 3 && !reachable; attempt += 1) {
     if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -237,8 +273,16 @@ export async function runTimeSeries(
  * What a stored result says at one spot. Null when there is no live API to ask (sample data), so the
  * caller can say that reading a spot needs the live service.
  */
-export async function readPoint(resultId: string, lon: number, lat: number, signal?: AbortSignal): Promise<PointReading | null> {
-  const path = `/api/results/${encodeURIComponent(resultId)}/point?lon=${lon.toFixed(6)}&lat=${lat.toFixed(6)}`;
+export async function readPoint(
+  resultId: string,
+  lon: number,
+  lat: number,
+  signal?: AbortSignal,
+  replay?: string | null,
+): Promise<PointReading | null> {
+  // The replay token lets a server instance that does not hold this result compute it again first.
+  const token = replay ? `&r=${encodeURIComponent(replay)}` : "";
+  const path = `/api/results/${encodeURIComponent(resultId)}/point?lon=${lon.toFixed(6)}&lat=${lat.toFixed(6)}${token}`;
   const response = await liveFetch(path, { signal, headers: { Accept: "application/json" } });
   return response ? ((await response.json()) as PointReading) : null;
 }

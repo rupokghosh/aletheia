@@ -9,7 +9,7 @@ import pytest
 import requests
 from fastapi.testclient import TestClient
 
-from nisar_investigator import api, config
+from nisar_investigator import api, config, provenance
 from nisar_investigator.schemas import Coverage, Summary, WorkflowResult
 
 BBOX = [-120.56, 50.675, -120.40, 50.735]
@@ -292,3 +292,75 @@ def test_coverage_of_kamloops_lake_from_the_real_catalogue():
     stack = next(s for s in body["stacks"] if s["product"] == "GCOV" and s["track"] == 77)
     assert {"2026-06-19", "2026-10-17"} <= set(stack["dates"])
     assert stack["polarizations"] == ["HH", "HV"]
+
+
+# ------------------------------------------------- results that outlive the server that made them
+
+
+def _fake_change(req):
+    """Stands in for the change workflow: writes one picture and the result under whatever id it is given."""
+    result_id = provenance.new_id("change")
+    provenance.artifact_path(result_id, "change_db.png").write_bytes(b"\x89PNG\r\n\x1a\nrebuilt")
+    result = WorkflowResult(
+        id=result_id, workflow="change", request=req.model_dump(mode="json"), summary=Summary(headline="Rebuilt."),
+        stats={"stack": {"track": 77}, "primary_polarization": "HH"},
+    )
+    provenance.save_result(result)
+    return result
+
+
+def test_a_replay_token_carries_the_request_and_nothing_else_is_accepted():
+    token = provenance.replay_token("change", {"bbox": [-120.56, 50.675, -120.4, 50.735], "date_before": "2026-06-19"})
+    assert provenance.read_replay(token) == ("change", {"bbox": [-120.56, 50.675, -120.4, 50.735], "date_before": "2026-06-19"})
+    assert provenance.read_replay("not-a-token") is None
+    assert provenance.read_replay(provenance.replay_token("format_disk", {})) is None
+    assert provenance.replay_token("timeseries", {"geometry": [[i * 0.123456, i * 0.654321] for i in range(4000)]}) is None
+
+
+def test_a_server_without_a_results_files_rebuilds_them_from_the_link(client, cache_dir, monkeypatch):
+    calls = []
+
+    def run(req):
+        calls.append(req)
+        return _fake_change(req)
+
+    monkeypatch.setattr(api, "run_change", run)
+    request = {"bbox": [-120.56, 50.675, -120.4, 50.735], "date_before": "2026-06-19", "date_after": "2026-10-17", "track": 77, "polarization": "HH"}
+    token = provenance.replay_token("change", request)
+    result_id = "chg_20261115_0badcafe"  # made by another server instance: nothing of it is on this disk
+
+    picture = client.get(f"/api/artifacts/{result_id}/change_db.png", params={"r": token})
+    assert picture.status_code == 200 and picture.content.endswith(b"rebuilt")
+    assert len(calls) == 1 and calls[0].date_after == "2026-10-17" and calls[0].track == 77
+    stored = client.get(f"/api/results/{result_id}", params={"r": token}).json()
+    assert stored["id"] == result_id and stored["replay"] == token
+    assert len(calls) == 1  # the second request found the files the first one put back
+
+
+def test_without_a_valid_token_a_missing_file_stays_missing(client, cache_dir, monkeypatch):
+    monkeypatch.setattr(api, "run_change", _fake_change)
+    assert client.get("/api/artifacts/chg_20261115_0badcafe/change_db.png").status_code == 404
+    assert client.get("/api/artifacts/chg_20261115_0badcafe/change_db.png", params={"r": "garbage"}).status_code == 404
+    assert client.get("/api/results/chg_20261115_0badcafe", params={"r": "garbage"}).status_code == 404
+
+
+def test_health_says_whether_questions_can_be_answered(client, monkeypatch):
+    monkeypatch.setattr(config, "agent_provider", lambda: "openai_compatible")
+    assert client.get("/api/health").json()["investigator"]["available"] is True
+    monkeypatch.setattr(config, "agent_provider", lambda: "ollama")
+    monkeypatch.setattr(config, "OLLAMA_HOST", "http://127.0.0.1:9")  # nothing listens there
+    api._model_check.update(at=0.0, ok=True)
+    assert client.get("/api/health").json()["investigator"]["available"] is False
+
+
+def test_a_hosted_server_limits_how_many_analyses_one_address_starts(client, monkeypatch):
+    monkeypatch.setattr(api, "run_change", lambda req: canned("change"))
+    monkeypatch.setattr(config, "RATE_LIMIT_PER_MINUTE", 3)
+    api._started.clear()
+    body = {"bbox": [-120.56, 50.675, -120.4, 50.735], "date_before": "2026-06-19", "date_after": "2026-10-17"}
+    answers = [client.post("/api/change", json=body, headers={"x-forwarded-for": "203.0.113.7"}).status_code for _ in range(5)]
+    assert answers == [200, 200, 200, 429, 429]
+    other = client.post("/api/change", json=body, headers={"x-forwarded-for": "203.0.113.8"})
+    assert other.status_code == 200  # another address is not affected
+    assert client.get("/api/health", headers={"x-forwarded-for": "203.0.113.7"}).status_code == 200  # reading is never limited
+    api._started.clear()

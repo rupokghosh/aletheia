@@ -259,6 +259,8 @@ export interface WorkflowResult {
   caveats: Caveat[];
   receipt: Receipt;
   downloads: Download[];
+  /** the request this result came from, packed; sent back so any server instance can rebuild its files */
+  replay?: string | null;
 }
 
 // ----------------------------------------------------------------- requests

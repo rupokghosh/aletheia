@@ -193,6 +193,9 @@ class WorkflowResult(BaseModel):
     caveats: list[Caveat] = Field(default_factory=list)
     receipt: Receipt = Field(default_factory=Receipt)
     downloads: list[Download] = Field(default_factory=list)
+    # The request this result came from, packed into a short text. With it, a server that no longer has
+    # the result's files (a fresh instance) can compute the same result again under the same id.
+    replay: str | None = None
 
 
 # ----------------------------------------------------------------- requests

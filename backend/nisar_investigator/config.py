@@ -48,8 +48,13 @@ def agent_provider() -> str:
     return "openai_compatible" if LLM_BASE_URL else "ollama"
 
 
+# On Vercel the code directory is read-only and each server instance has only a small temporary disk and
+# one processor, so caches go to /tmp and fewer reader processes are started.
+HOSTED = bool(os.environ.get("VERCEL"))
+
+
 def cache_dir() -> Path:
-    path = Path(os.environ.get("NISAR_CACHE_DIR", BACKEND_DIR / ".cache"))
+    path = Path(os.environ.get("NISAR_CACHE_DIR", "/tmp/aletheia" if HOSTED else BACKEND_DIR / ".cache"))
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -78,4 +83,8 @@ MAX_WINDOW_PIXELS = int(os.environ.get("NISAR_MAX_WINDOW_PIXELS", 25_000_000))
 BLOCK_SIZE = 1024 * 1024
 MAX_CACHED_BLOCKS = int(os.environ.get("NISAR_MAX_CACHED_BLOCKS", 256))
 # Reader processes kept alive between requests (h5py serialises reads inside one process).
-READ_PROCESSES = int(os.environ.get("NISAR_READ_PROCESSES", 8))
+# 1 or less means no reader processes at all: files are then read on a few threads of the server itself.
+# That is the default on a hosted function, where starting processes is not dependable.
+READ_PROCESSES = int(os.environ.get("NISAR_READ_PROCESSES", 1 if HOSTED else 8))
+# Analyses one address may start per minute on a hosted server (0 = no limit, the default when run locally).
+RATE_LIMIT_PER_MINUTE = int(os.environ.get("NISAR_RATE_LIMIT", 20 if HOSTED else 0))

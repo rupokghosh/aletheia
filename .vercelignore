@@ -1,0 +1,10 @@
+# Not part of the deployed app
+research_notes/
+reports/
+.claude/
+backend/.venv/
+backend/.cache/
+backend/tests/
+backend/.env
+web/node_modules/
+web/.next/

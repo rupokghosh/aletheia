@@ -269,8 +269,13 @@ def test_run_change_reports_ranges_layers_downloads_and_a_receipt(archive):
     artifacts = config.artifacts_dir() / result.id
     for url in [layer.url for layer in result.layers] + [d.url for d in result.downloads]:
         assert url.startswith(f"/api/artifacts/{result.id}/")
-        assert (artifacts / url.rsplit("/", 1)[1]).stat().st_size > 0
+        link, _, token = url.partition("?r=")
+        assert token == result.replay  # every file link carries the request, so any server can rebuild the file
+        assert (artifacts / link.rsplit("/", 1)[1]).stat().st_size > 0
     assert provenance.load_result(result.id)["id"] == result.id
+    workflow, replayed = provenance.read_replay(result.replay)
+    assert workflow == "change" and replayed["date_before"] == result.request["date_before"]
+    assert isinstance(replayed["track"], int) and replayed["polarization"] in ("HH", "VV")  # the choices made, not "auto"
 
     assert [g.date for g in result.receipt.granules] == ["2026-06-19", "2026-10-17"]
     steps = {s.name: s for s in result.receipt.steps}

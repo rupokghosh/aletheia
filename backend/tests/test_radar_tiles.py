@@ -84,7 +84,7 @@ def test_a_square_is_fetched_from_nasa_once(gibs):
     asked = len(gibs["asked"])
     again = radar_tiles.tile(3, 1, 2, END, 12)
     assert again.data == first.data and len(gibs["asked"]) == asked
-    assert radar_tiles.cache_control(END, first.complete) == "public, max-age=2592000, immutable"
+    assert radar_tiles.cache_control(END, first.complete) == "public, max-age=2592000, s-maxage=2592000, immutable"
 
 
 def test_a_square_with_no_pass_is_remembered_as_blank(gibs):

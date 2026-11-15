@@ -280,6 +280,7 @@ export default function MapView() {
 
   // ---- reading one spot: click the map while a result is on it
   const [spot, setSpot] = useState<SpotState | null>(null);
+  const readableReplay = showResult ? stored.result.replay : null;
   // Reading a spot asks the API, so it is not offered on the examples-only site.
   const readableId = showResult && stored.result.status === "ok" && !state.drawing && !EXAMPLES_ONLY ? stored.result.id : null;
   // A reading belongs to the result it was taken from; switching results hides it without an effect.
@@ -296,7 +297,7 @@ export default function MapView() {
       const { lng: lon, lat } = event.lngLat;
       const at = { resultId: readableId, lon, lat };
       setSpot({ status: "loading", ...at });
-      readPoint(readableId, lon, lat, controller.signal)
+      readPoint(readableId, lon, lat, controller.signal, readableReplay)
         .then((reading) =>
           setSpot(
             reading
@@ -316,7 +317,7 @@ export default function MapView() {
       controller?.abort();
       canvas.style.cursor = "";
     };
-  }, [map, readableId]);
+  }, [map, readableId, readableReplay]);
 
   const spotLon = visibleSpot?.lon;
   const spotLat = visibleSpot?.lat;

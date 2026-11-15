@@ -13,6 +13,7 @@ import importlib.util
 import os
 import re
 import threading
+import time
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -104,6 +105,38 @@ app.add_middleware(
 )
 
 
+# -------------------------------------------------------------- fair use
+#
+# A public server spends its owner's NASA data allowance and processor time on every analysis. Each address
+# may start a limited number per minute; reading results, tiles and coverage is not limited. The count is
+# kept per server instance, which is enough to stop one visitor from hammering it.
+
+_ANALYSES = ("/api/change", "/api/timeseries", "/api/motion", "/api/investigate")
+_started: dict[str, list[float]] = {}
+_started_guard = threading.Lock()
+
+
+@app.middleware("http")
+async def _fair_use(request: Request, call_next):
+    limit = config.RATE_LIMIT_PER_MINUTE
+    if limit > 0 and request.method == "POST" and request.url.path in _ANALYSES:
+        forwarded = request.headers.get("x-forwarded-for", "")
+        who = forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
+        now = time.time()
+        with _started_guard:
+            recent = [t for t in _started.get(who, []) if now - t < 60.0]
+            allowed = len(recent) < limit
+            if allowed:
+                recent.append(now)
+            _started[who] = recent
+            if len(_started) > 5000:  # forget addresses that have gone quiet
+                for key in [k for k, v in _started.items() if not v or now - v[-1] > 60.0]:
+                    del _started[key]
+        if not allowed:
+            return _error(429, "too_many_requests", "Too many analyses were started from this address in the last minute. Wait a moment and try again.")
+    return await call_next(request)
+
+
 # ------------------------------------------------------------------- errors
 
 
@@ -155,8 +188,26 @@ async def health() -> dict:
         "investigator": {
             "provider": config.agent_provider(),
             "model": config.AGENT_MODEL if config.agent_provider() == "anthropic" else config.LLM_MODEL,
+            "available": await run_in_threadpool(_investigator_available),
         },
     }
+
+
+_model_check: dict = {"at": 0.0, "ok": False}
+
+
+def _investigator_available() -> bool:
+    """Whether questions in plain language can be answered here: a hosted model is configured, or the local
+    one answers. Asked of the local model at most twice a minute."""
+    if config.agent_provider() != "ollama":
+        return True
+    if time.time() - _model_check["at"] > 30:
+        try:
+            ok = requests.get(f"{config.OLLAMA_HOST}/api/version", timeout=0.6).status_code == 200
+        except requests.RequestException:
+            ok = False
+        _model_check.update(at=time.time(), ok=ok)
+    return bool(_model_check["ok"])
 
 
 def _parse_bbox(text: str) -> tuple[float, float, float, float]:
@@ -274,28 +325,73 @@ async def investigate(req: InvestigateRequest) -> StreamingResponse:
 # ------------------------------------------------------- results and files
 
 
+_replays: dict[str, threading.Lock] = {}
+_replays_guard = threading.Lock()
+
+
+def _materialise(result_id: str, token: str | None) -> dict | None:
+    """The stored result. When this server instance does not have it (a fresh instance keeps nothing from
+    earlier ones) and the caller sent the result's replay token, the result is computed again under the same
+    id first, which also puts its pictures and files back."""
+    stored = provenance.load_result(result_id)
+    replay = provenance.read_replay(token) if (stored is None and token) else None
+    if replay is None:
+        return stored
+    workflow, request = replay
+    runners: dict[str, tuple[type[BaseModel], Callable]] = {
+        "change": (ChangeRequest, run_change),
+        "timeseries": (TimeSeriesRequest, run_timeseries),
+        "motion": (MotionRequest, _run_motion),
+    }
+    if workflow not in runners:
+        return None
+    model, run = runners[workflow]
+    with _replays_guard:
+        lock = _replays.setdefault(result_id, threading.Lock())
+    with lock:  # several files of one result are usually asked for at once: compute it once
+        stored = provenance.load_result(result_id)
+        if stored is None:
+            try:
+                with provenance.reusing_id(result_id):
+                    run(model(**{k: v for k, v in request.items() if k in model.model_fields}))
+            except Exception as exc:  # noqa: BLE001 - a bad token must not become a server error
+                common.log_failure("replay", exc)
+            stored = provenance.load_result(result_id)
+    return stored
+
+
 @app.get("/api/results/{result_id}")
-async def result(result_id: str) -> JSONResponse:
+async def result(result_id: str, r: str | None = None) -> JSONResponse:
     """A stored WorkflowResult, exactly as it was returned when it was computed."""
-    stored = provenance.load_result(result_id) if _RESULT_ID.fullmatch(result_id) else None
+    stored = await run_in_threadpool(_materialise, result_id, r) if _RESULT_ID.fullmatch(result_id) else None
     if stored is None:
         raise ApiError(404, "not_found", f"No stored result has the id {result_id!r}.")
     return JSONResponse(stored)
 
 
 @app.get("/api/results/{result_id}/point")
-async def point(result_id: str, lon: float = Query(..., ge=-180, le=180), lat: float = Query(..., ge=-90, le=90)) -> dict:
+async def point(
+    result_id: str,
+    lon: float = Query(..., ge=-180, le=180),
+    lat: float = Query(..., ge=-90, le=90),
+    r: str | None = None,
+) -> dict:
     """What a stored result says at one spot: the values there, and what they mean in plain words."""
     if not _RESULT_ID.fullmatch(result_id):
         raise ApiError(404, "not_found", "No such result.")
+
+    def read() -> dict:
+        _materialise(result_id, r)
+        return plain.read_point(result_id, lon, lat)
+
     try:
-        return await run_in_threadpool(plain.read_point, result_id, lon, lat)
+        return await run_in_threadpool(read)
     except plain.PointError as exc:
         raise ApiError(404, "no_reading", str(exc)) from None
 
 
 @app.get("/api/artifacts/{result_id}/{filename}")
-async def artifact(result_id: str, filename: str) -> FileResponse:
+async def artifact(result_id: str, filename: str, r: str | None = None) -> FileResponse:
     """A PNG, GeoTIFF, CSV or JSON file produced by a workflow."""
     media_type = _CONTENT_TYPES.get(Path(filename).suffix.lower())
     missing = ApiError(404, "not_found", "No such file.")
@@ -304,7 +400,11 @@ async def artifact(result_id: str, filename: str) -> FileResponse:
         raise missing
     root = config.artifacts_dir().resolve()
     path = (root / result_id / filename).resolve()
-    if not path.is_relative_to(root) or not path.is_file():
+    if not path.is_relative_to(root):
+        raise missing
+    if not path.is_file() and r:
+        await run_in_threadpool(_materialise, result_id, r)
+    if not path.is_file():
         raise missing
     # a result id is never reused, so its files never change
     return FileResponse(path, media_type=media_type, headers={"Cache-Control": "public, max-age=86400, immutable"})

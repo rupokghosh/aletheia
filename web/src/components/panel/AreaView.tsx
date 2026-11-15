@@ -9,7 +9,7 @@ import { stackViews, summarizeCoverage, type StackView } from "@/lib/coverage";
 import { formatArea, formatMonthSpan, plural } from "@/lib/format";
 import { bboxAreaKm2, bboxKey } from "@/lib/geo";
 import { useApp, type AnalysisTab } from "@/lib/store";
-import { useActions, useApiMode } from "@/lib/useActions";
+import { useActions, useApiMode, useCanAsk } from "@/lib/useActions";
 import type { BBox, WorkflowKind } from "@/lib/types";
 import { AskForm } from "./AskForm";
 import { ChangeForm } from "./ChangeForm";
@@ -131,6 +131,7 @@ export function AreaView({ bbox }: { bbox: BBox }) {
   const { state, dispatch } = useApp();
   const actions = useActions();
   const mode = useApiMode();
+  const canAsk = useCanAsk();
   const { coverage, analysisTab, run } = state;
   const views = useMemo(() => (coverage.data ? stackViews(coverage.data, bbox) : []), [coverage.data, bbox]);
   const ready = coverage.status === "ready" && coverage.data !== null;
@@ -201,13 +202,15 @@ export function AreaView({ bbox }: { bbox: BBox }) {
         </ul>
       </section>
 
-      <section className="mt-6" aria-label="Ask a question">
-        <h2 className="text-[15px] tracking-normal text-ink">Or ask in your own words</h2>
-        <p className="mt-0.5 mb-2.5 max-w-[65ch] text-sm leading-snug text-ink-2">
-          The tool picks the analyses, runs them and writes up what it found, with its sources.
-        </p>
-        <AskForm bbox={bbox} />
-      </section>
+      {canAsk ? (
+        <section className="mt-6" aria-label="Ask a question">
+          <h2 className="text-[15px] tracking-normal text-ink">Or ask in your own words</h2>
+          <p className="mt-0.5 mb-2.5 max-w-[65ch] text-sm leading-snug text-ink-2">
+            The tool picks the analyses, runs them and writes up what it found, with its sources.
+          </p>
+          <AskForm bbox={bbox} />
+        </section>
+      ) : null}
     </>
   );
 }

@@ -3,7 +3,8 @@
 /** Network actions: everything that calls the API client and feeds the result into the store. */
 
 import { useEffect, useEffectEvent, useMemo, useSyncExternalStore } from "react";
-import { EXAMPLES_ONLY,
+import {
+  EXAMPLES_ONLY,
   ApiError,
   checkApi,
   getApiMode,
@@ -15,6 +16,8 @@ import { EXAMPLES_ONLY,
   subscribeApiMode,
   type ApiMode,
   type Sourced,
+  getCanAsk,
+  subscribeCanAsk,
 } from "./api";
 import { bboxKey } from "./geo";
 import { useApp } from "./store";
@@ -47,6 +50,11 @@ const SERVER_MODE: ApiMode = { demo: false, reason: null };
 
 export function useApiMode(): ApiMode {
   return useSyncExternalStore(subscribeApiMode, getApiMode, () => SERVER_MODE);
+}
+
+/** Whether the server behind the API can answer questions asked in plain language. */
+export function useCanAsk(): boolean {
+  return useSyncExternalStore(subscribeCanAsk, getCanAsk, () => true);
 }
 
 /** Checks once, at start, whether the configured API answers. */

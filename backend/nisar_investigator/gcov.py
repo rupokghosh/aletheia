@@ -6,7 +6,7 @@ import hashlib
 import json
 import threading
 import time
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass, field
 
@@ -286,6 +286,8 @@ def _ready(_: int) -> bool:
 
 def warm_readers() -> None:
     """Start the reader processes ahead of the first request. Safe to call from a background thread."""
+    if config.READ_PROCESSES <= 1:
+        return
     try:
         list(_reader_pool().map(_ready, range(config.READ_PROCESSES)))
     except (OSError, RuntimeError):
@@ -315,6 +317,12 @@ def read_windows(
     todo = [i for i in range(len(jobs)) if i not in results]
     if len(todo) <= 1 or max_workers <= 1:
         fetched = [_read_one(jobs[i]) for i in todo]
+    elif config.READ_PROCESSES <= 1:
+        # No reader processes (a hosted function): a few threads instead. h5py lets one thread at a time read
+        # a file's metadata, but the pixel data is fetched outside it, so the downloads still overlap.
+        remote.resolve_many([jobs[i][0].url for i in todo])
+        with ThreadPoolExecutor(max_workers=min(4, len(todo))) as pool:
+            fetched = list(pool.map(_read_one, [jobs[i] for i in todo]))
     else:
         # The login happens here, once and side by side, so that no reader process has to do it.
         links = remote.resolve_many([jobs[i][0].url for i in todo])
