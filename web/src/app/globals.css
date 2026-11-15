@@ -277,6 +277,84 @@
   );
 }
 
+/* Two other skies, chosen with ?sky=night or ?sky=dawn. Night: deep space with two faint clouds of colour.
+   Dawn: the same space warming to the colours of a sunrise seen from orbit along the bottom. Both get the
+   still stars of StarField and a brighter glow around the planet. */
+.globe-backdrop[data-sky="night"] {
+  background:
+    radial-gradient(ellipse 55% 45% at 84% 14%, rgb(58 92 196 / 0.3), rgb(58 92 196 / 0) 70%),
+    radial-gradient(ellipse 50% 42% at 36% 92%, rgb(126 70 170 / 0.22), rgb(126 70 170 / 0) 70%),
+    radial-gradient(circle at 60% 50%, #111e42 0, #0a1330 42%, #060a1b 78%, #04060f 100%);
+}
+
+.globe-backdrop[data-sky="dawn"] {
+  background:
+    radial-gradient(ellipse 85% 55% at 60% 112%, rgb(255 196 132 / 0.95), rgb(248 150 118 / 0.6) 34%, rgb(190 96 130 / 0.28) 58%, rgb(190 96 130 / 0) 76%),
+    linear-gradient(180deg, #070c20 0%, #0d1738 32%, #1f2456 56%, #45306c 76%, #7c4470 100%);
+}
+
+.globe-backdrop[data-sky="night"]::before,
+.globe-backdrop[data-sky="dawn"]::before {
+  background: radial-gradient(
+    circle at var(--globe-x) var(--globe-y),
+    rgb(96 170 255 / 0) calc(var(--globe-r) * 0.96),
+    rgb(120 186 255 / 0.9) var(--globe-r),
+    rgb(86 150 255 / 0.42) calc(var(--globe-r) * 1.05),
+    rgb(70 124 240 / 0.18) calc(var(--globe-r) * 1.18),
+    rgb(70 124 240 / 0) calc(var(--globe-r) * 1.5)
+  );
+}
+
+.star-field {
+  position: absolute;
+  inset: 0;
+}
+
+.globe-backdrop[data-sky="dawn"] .star-field {
+  mask-image: linear-gradient(180deg, #000 0, #000 38%, transparent 72%);
+}
+
+.twinkle {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px 1px rgb(190 214 255 / 0.8);
+  animation: twinkle 5s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.globe-backdrop[data-sky="night"] .shooting-star,
+.globe-backdrop[data-sky="dawn"] .shooting-star {
+  height: 2.5px;
+  background: linear-gradient(90deg, rgb(170 205 255 / 0), rgb(170 205 255 / 0.55) 45%, rgb(226 238 255 / 0.95) 88%, #fff);
+  filter: drop-shadow(0 0 6px rgb(150 195 255 / 0.85));
+}
+
+.globe-backdrop[data-sky="night"] .shooting-star::after,
+.globe-backdrop[data-sky="dawn"] .shooting-star::after {
+  background: radial-gradient(circle, #fff 0 45%, #cfe2ff 75%, rgb(150 195 255 / 0.9));
+  box-shadow:
+    0 0 10px 4px rgb(170 208 255 / 0.9),
+    0 0 26px 10px rgb(120 176 255 / 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .twinkle {
+    animation: none;
+  }
+}
+
 /* A shooting star: a thin streak that fades in, runs along its own length and fades out. ShootingStars
    places one at a time, rarely. */
 .shooting-star {

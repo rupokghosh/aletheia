@@ -20,6 +20,7 @@ import { useApiMode } from "@/lib/useActions";
 import type { BBox } from "@/lib/types";
 import { addAnchors, colourWater, destroyMap } from "./anchors";
 import { ShootingStars } from "./ShootingStars";
+import { StarField } from "./StarField";
 import { LayersCard } from "./LayersCard";
 import { SpotCard, type SpotState } from "./SpotCard";
 import { SwipeHandle } from "./SwipeHandle";
@@ -29,6 +30,15 @@ import { useResultLayers } from "./useResultLayers";
 
 /** MapLibre 6 loads its worker as a separate module; scripts/copy-maplibre-worker.mjs puts it here. */
 const WORKER_URL = "/vendor/maplibre-gl-worker.mjs";
+/** What is drawn behind the globe. Chosen with ?sky= in the address while the look is being decided. */
+type Sky = "paper" | "night" | "dawn";
+const DEFAULT_SKY: Sky = "paper";
+
+function chosenSky(): Sky {
+  const asked = new URLSearchParams(window.location.search).get("sky");
+  return asked === "paper" || asked === "night" || asked === "dawn" ? asked : DEFAULT_SKY;
+}
+
 /** The highest latitude of the Web Mercator world, where MapLibre stops scaling its globe. */
 const MAX_GLOBE_LATITUDE = 85.051129;
 const NO_LAYERS: ReturnType<typeof mapLayersFor> = [];
@@ -66,6 +76,7 @@ export default function MapView() {
   const backdropRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [supported] = useState(webglAvailable);
+  const [sky] = useState(chosenSky);
   const [tilesReady, setTilesReady] = useState(false);
 
   useEffect(() => {
@@ -327,7 +338,8 @@ export default function MapView() {
 
   return (
     <div className="relative h-full w-full bg-bg">
-      <div ref={backdropRef} className="globe-backdrop" aria-hidden="true">
+      <div ref={backdropRef} className="globe-backdrop" data-sky={sky} aria-hidden="true">
+        {sky === "paper" ? null : <StarField />}
         <ShootingStars />
       </div>
       {/* MapLibre's stylesheet sets position: relative on this element, so it is sized by height, not by insets. */}
