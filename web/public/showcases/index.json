@@ -27,9 +27,9 @@
   "title": "A Florida river floodplain in October",
   "place_name": "Choctawhatchee River floodplain, Florida",
   "question": "How did this river floodplain change between 27 September and 21 October 2026, and do the river gauges agree?",
-  "summary": "Between 27 September and 21 October 2026, the Choctawhatchee River floodplain showed radar brightness increases over 0.05 to 32.37 km\u00b2 (HH polarization) and decreases over 0.0 to 0.5 km\u00b2. River gauge 02366500 recorded 1.494 m on 2026-09-27 and 3.313 m on 2026-10-21. River gauge 02365769 recorded 2.871 m on 2026-09-27 and 3.560 m on 2026-10-21.",
+  "summary": "Between 27 September and 21 October 2026, the floodplain showed radar brightness increased over 2.5 km\u00b2 (0.05\u201332.4 km\u00b2) and decreased over 0.0\u20130.5 km\u00b2. River gauges recorded water levels rising from 1.49 m to 3.31 m and 2.87 m to 3.56 m.",
   "file": "choctawhatchee-floodplain/investigation.json",
   "model": "qwen3:14b (local, Ollama)",
-  "generated_at": "2026-11-15T01:18:50Z"
+  "generated_at": "2026-11-15T01:22:20Z"
  }
 ]

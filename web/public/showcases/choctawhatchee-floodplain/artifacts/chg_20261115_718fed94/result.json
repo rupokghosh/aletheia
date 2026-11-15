@@ -1,5 +1,5 @@
 {
-  "id": "chg_20261114_592e5b29",
+  "id": "chg_20261115_718fed94",
   "workflow": "change",
   "status": "ok",
   "request": {
@@ -20,6 +20,7 @@
       {
         "key": "increased_area_km2",
         "label": "Area where radar brightness rose (HH)",
+        "technical_label": null,
         "unit": "km2",
         "central": 2.48,
         "low": 0.05,
@@ -28,6 +29,7 @@
       {
         "key": "decreased_area_km2",
         "label": "Area where radar brightness fell (HH)",
+        "technical_label": null,
         "unit": "km2",
         "central": 0.08,
         "low": 0.0,
@@ -36,6 +38,7 @@
       {
         "key": "analysed_area_km2",
         "label": "Area analysed",
+        "technical_label": null,
         "unit": "km2",
         "central": 313.39,
         "low": null,
@@ -44,6 +47,7 @@
       {
         "key": "cannot_tell_percent",
         "label": "Share of the area at the noise floor on both dates (HH)",
+        "technical_label": null,
         "unit": "%",
         "central": 0.0,
         "low": null,
@@ -52,6 +56,7 @@
       {
         "key": "increase_median_change_db",
         "label": "Typical (median) change where it rose",
+        "technical_label": null,
         "unit": "dB",
         "central": 3.75,
         "low": null,
@@ -60,6 +65,7 @@
       {
         "key": "decrease_median_change_db",
         "label": "Typical (median) change where it fell",
+        "technical_label": null,
         "unit": "dB",
         "central": -3.79,
         "low": null,
@@ -68,6 +74,7 @@
       {
         "key": "scene_shift_db",
         "label": "Scene-wide shift removed before comparing",
+        "technical_label": null,
         "unit": "dB",
         "central": 0.23,
         "low": null,
@@ -76,6 +83,7 @@
       {
         "key": "increased_area_km2_hv",
         "label": "Area where radar brightness rose (HV)",
+        "technical_label": null,
         "unit": "km2",
         "central": 0.02,
         "low": 0.0,
@@ -84,6 +92,7 @@
       {
         "key": "decreased_area_km2_hv",
         "label": "Area where radar brightness fell (HV)",
+        "technical_label": null,
         "unit": "km2",
         "central": 0.38,
         "low": 0.26,
@@ -96,7 +105,7 @@
       "id": "before",
       "title": "HH before, 27 September 2026 (dB)",
       "kind": "image",
-      "url": "/api/artifacts/chg_20261114_592e5b29/before.png",
+      "url": "/api/artifacts/chg_20261115_718fed94/before.png",
       "corners": [
         [
           -86.080029,
@@ -135,7 +144,7 @@
       "id": "after",
       "title": "HH after, 21 October 2026 (dB)",
       "kind": "image",
-      "url": "/api/artifacts/chg_20261114_592e5b29/after.png",
+      "url": "/api/artifacts/chg_20261115_718fed94/after.png",
       "corners": [
         [
           -86.080029,
@@ -174,7 +183,7 @@
       "id": "change_db",
       "title": "HH change, after minus before (dB)",
       "kind": "image",
-      "url": "/api/artifacts/chg_20261114_592e5b29/change_db.png",
+      "url": "/api/artifacts/chg_20261115_718fed94/change_db.png",
       "corners": [
         [
           -86.080029,
@@ -213,7 +222,7 @@
       "id": "change_classes",
       "title": "HH change classes (central threshold)",
       "kind": "image",
-      "url": "/api/artifacts/chg_20261114_592e5b29/change_classes.png",
+      "url": "/api/artifacts/chg_20261115_718fed94/change_classes.png",
       "corners": [
         [
           -86.080029,
@@ -265,7 +274,7 @@
       "id": "before_hv",
       "title": "HV before, 27 September 2026 (dB)",
       "kind": "image",
-      "url": "/api/artifacts/chg_20261114_592e5b29/before_hv.png",
+      "url": "/api/artifacts/chg_20261115_718fed94/before_hv.png",
       "corners": [
         [
           -86.080029,
@@ -304,7 +313,7 @@
       "id": "after_hv",
       "title": "HV after, 21 October 2026 (dB)",
       "kind": "image",
-      "url": "/api/artifacts/chg_20261114_592e5b29/after_hv.png",
+      "url": "/api/artifacts/chg_20261115_718fed94/after_hv.png",
       "corners": [
         [
           -86.080029,
@@ -343,7 +352,7 @@
       "id": "change_db_hv",
       "title": "HV change, after minus before (dB)",
       "kind": "image",
-      "url": "/api/artifacts/chg_20261114_592e5b29/change_db_hv.png",
+      "url": "/api/artifacts/chg_20261115_718fed94/change_db_hv.png",
       "corners": [
         [
           -86.080029,
@@ -382,7 +391,7 @@
       "id": "change_classes_hv",
       "title": "HV change classes (central threshold)",
       "kind": "image",
-      "url": "/api/artifacts/chg_20261114_592e5b29/change_classes_hv.png",
+      "url": "/api/artifacts/chg_20261115_718fed94/change_classes_hv.png",
       "corners": [
         [
           -86.080029,
@@ -433,6 +442,15 @@
   ],
   "series": [],
   "stats": {
+    "effort": {
+      "files": 2,
+      "files_measured": 2,
+      "archive_gb": 12.6,
+      "read_mb": 276.8,
+      "share_read": 0.0219,
+      "requests": 66,
+      "seconds_per_file": 20.1
+    },
     "primary_polarization": "HH",
     "stack": {
       "track": 127,
@@ -701,7 +719,7 @@
           ],
           "granules_found": 34
         },
-        "seconds": 0.27
+        "seconds": 0.28
       },
       {
         "name": "select_stack",
@@ -729,13 +747,13 @@
             16507
           ],
           "epsg": 32616,
-          "megabytes_transferred": 276.8,
+          "megabytes_transferred": 0.0,
           "from_cache": [
-            false,
-            false
+            true,
+            true
           ]
         },
-        "seconds": 12.0
+        "seconds": 0.13
       },
       {
         "name": "detect_change",
@@ -751,7 +769,7 @@
           "speck_removal": "binary opening with a disk 11 pixels across",
           "noise_margin_db": 1.5
         },
-        "seconds": 2.1
+        "seconds": 2.31
       },
       {
         "name": "write_artifacts",
@@ -767,61 +785,61 @@
             "HV"
           ]
         },
-        "seconds": 2.09
+        "seconds": 2.13
       }
     ],
     "software": {
       "name": "aletheia",
       "version": "0.1.0",
-      "commit": "fd08ea6"
+      "commit": "9497c47"
     },
-    "generated_at": "2026-11-14T23:13:06Z",
+    "generated_at": "2026-11-15T01:20:52Z",
     "reproduce": "# Needs: pip install -e backend/  and an Earthdata Login in ~/.netrc (or EARTHDATA_TOKEN).\n# Reads the best calibration tier available when it runs. This result used:\n#   NISAR_L2_PR_GCOV_031_127_D_073_4005_DHDH_A_20260927T002830_20260927T002905_P05023_N_F_J_001 (provisional)\n#   NISAR_L2_PR_GCOV_033_127_D_073_4005_DHDH_A_20261021T002830_20261021T002905_P05023_N_F_J_001 (provisional)\nfrom nisar_investigator.schemas import ChangeRequest\nfrom nisar_investigator.workflows.change import run_change\n\nif __name__ == \"__main__\":  # required: the reader starts worker processes\n    result = run_change(ChangeRequest(\n        bbox=(-86.08, 30.37, -85.84, 30.49), date_before=\"2026-09-27\", date_after=\"2026-10-21\", track=127, polarization=\"HH\",\n    ))\n    print(result.summary.headline)\n    for m in result.summary.metrics:\n        print(m.key, m.low, m.central, m.high, m.unit)\n"
   },
   "downloads": [
     {
       "label": "HH before, 2026-09-27 (dB, GeoTIFF)",
-      "url": "/api/artifacts/chg_20261114_592e5b29/before_db.tif",
+      "url": "/api/artifacts/chg_20261115_718fed94/before_db.tif",
       "format": "geotiff"
     },
     {
       "label": "HH after, 2026-10-21 (dB, GeoTIFF)",
-      "url": "/api/artifacts/chg_20261114_592e5b29/after_db.tif",
+      "url": "/api/artifacts/chg_20261115_718fed94/after_db.tif",
       "format": "geotiff"
     },
     {
       "label": "HH change, scene shift removed (dB, GeoTIFF)",
-      "url": "/api/artifacts/chg_20261114_592e5b29/change_db.tif",
+      "url": "/api/artifacts/chg_20261115_718fed94/change_db.tif",
       "format": "geotiff"
     },
     {
       "label": "HV before, 2026-09-27 (dB, GeoTIFF)",
-      "url": "/api/artifacts/chg_20261114_592e5b29/before_db_hv.tif",
+      "url": "/api/artifacts/chg_20261115_718fed94/before_db_hv.tif",
       "format": "geotiff"
     },
     {
       "label": "HV after, 2026-10-21 (dB, GeoTIFF)",
-      "url": "/api/artifacts/chg_20261114_592e5b29/after_db_hv.tif",
+      "url": "/api/artifacts/chg_20261115_718fed94/after_db_hv.tif",
       "format": "geotiff"
     },
     {
       "label": "HV change, scene shift removed (dB, GeoTIFF)",
-      "url": "/api/artifacts/chg_20261114_592e5b29/change_db_hv.tif",
+      "url": "/api/artifacts/chg_20261115_718fed94/change_db_hv.tif",
       "format": "geotiff"
     },
     {
       "label": "Change map (PNG)",
-      "url": "/api/artifacts/chg_20261114_592e5b29/change_db.png",
+      "url": "/api/artifacts/chg_20261115_718fed94/change_db.png",
       "format": "png"
     },
     {
       "label": "Statistics (CSV)",
-      "url": "/api/artifacts/chg_20261114_592e5b29/statistics.csv",
+      "url": "/api/artifacts/chg_20261115_718fed94/statistics.csv",
       "format": "csv"
     },
     {
       "label": "Full result with receipt (JSON)",
-      "url": "/api/artifacts/chg_20261114_592e5b29/result.json",
+      "url": "/api/artifacts/chg_20261115_718fed94/result.json",
       "format": "json"
     }
   ]
