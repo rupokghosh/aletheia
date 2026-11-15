@@ -63,6 +63,7 @@ class DateRecord:
     corners: list[tuple[float, float]]
     region_area_km2: float
     pixel_size_m: tuple[float, float]
+    coverage: float = 1.0  # share of the area with valid radar samples
 
 
 @dataclass
@@ -193,7 +194,33 @@ def examine(
         corners=cut.corners_lonlat(),
         region_area_km2=expected * cut.pixel_area_km2,
         pixel_size_m=cut.pixel_size,
+        coverage=cover,
     )
+
+
+FULL_COVERAGE = 0.995
+
+
+def duplicate_frames(stacks: dict[StackKey, list[Granule]], probed: dict[StackKey, list[DateRecord]]) -> list[StackKey]:
+    """Frames that only repeat another frame of the same pass.
+
+    Neighbouring frames of a track overlap along the flight line. An area that lies wholly inside the overlap
+    is in both, with the same samples of the same pass, so one frame is enough. A frame counts as a repeat
+    when a sister frame (same track and direction) covers the whole area too and has every one of its dates.
+    `probed` holds the one date already read from each stack.
+    """
+    groups: dict[tuple[int, str], list[StackKey]] = {}
+    for key in stacks:
+        if key in probed and probed[key] and probed[key][0].coverage >= FULL_COVERAGE:
+            groups.setdefault((key[0], key[1]), []).append(key)
+    repeats: list[StackKey] = []
+    for keys in groups.values():
+        if len(keys) < 2:
+            continue
+        dates = {key: {g.date for g in stacks[key]} for key in keys}
+        keep = max(keys, key=lambda key: (len(dates[key]), probed[key][0].coverage, -key[2]))
+        repeats += [key for key in keys if key != keep and dates[key] <= dates[keep]]
+    return repeats
 
 
 # ---------------------------------------------------------------- wording
@@ -358,8 +385,13 @@ def _run(req: TimeSeriesRequest, request: dict, rec: provenance.Recorder) -> Wor
                     for g in stacks[key]:
                         if g.mode == probe.mode:
                             skip(key, g, reason)
+            repeats = duplicate_frames(stacks, records)
+            for key in repeats:
+                del records[key]
+            if repeats:
+                step.params["frames_repeating_another_frame_of_the_same_pass"] = [common.stack_name(k) for k in repeats]
             done = {g.granule_id for _, g in probes} | set(skipped)
-            queue = [(key, g) for key, g in queue if g.granule_id not in done]
+            queue = [(key, g) for key, g in queue if g.granule_id not in done and key not in repeats]
         for i in range(0, len(queue), batch_size):
             handle(queue[i : i + batch_size])
         step.params.update({k: round(v, 1) if isinstance(v, float) else v for k, v in io.items()})

@@ -12,7 +12,9 @@ import importlib
 import importlib.util
 import os
 import re
+import threading
 from collections.abc import Callable
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import requests
@@ -24,7 +26,7 @@ from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import __version__, agent, catalog, config, plain, provenance, radar_tiles
+from . import __version__, agent, catalog, config, gcov, plain, provenance, radar_tiles, remote
 from .schemas import ChangeRequest, Coverage, InvestigateRequest, MotionRequest, TimeSeriesRequest, WorkflowResult
 from .workflows import common
 from .workflows.change import run_change
@@ -59,11 +61,41 @@ def _cors_origins() -> list[str]:
     return list(dict.fromkeys(DEFAULT_CORS_ORIGINS + extra))
 
 
+@asynccontextmanager
+async def _lifespan(_: FastAPI):
+    """Start the file-reader processes while the server comes up, so the first analysis does not wait for them."""
+    threading.Thread(target=gcov.warm_readers, daemon=True).start()
+    yield
+
+
 app = FastAPI(
     title="Aletheia API",
     version=__version__,
     description="Radar-backed answers from NISAR data, with receipts.",
+    lifespan=_lifespan,
 )
+
+
+def _resolve_likely(found: Coverage) -> None:
+    """Log in to the archive and resolve the links of the files an analysis here would read first.
+
+    A few one-byte requests, made while the person is still choosing what to ask; they take the login
+    (the slowest single step of a first read) out of the analysis that follows. Never raises.
+    """
+    try:
+        urls: list[str] = []
+        backscatter = [s for s in found.stacks if s.product == "GCOV"]
+        if backscatter:
+            best = max(backscatter, key=lambda s: len(s.dates))
+            mine = [g for g in found.products.get("GCOV", []) if (g.track, g.frame, g.direction) == (best.track, best.frame, best.direction)]
+            urls += [g.url for g in sorted(mine, key=lambda g: g.date or "")[-2:]]
+        pairs = sorted(found.products.get("GUNW", []), key=lambda g: g.secondary_date or "")
+        urls += [g.url for g in pairs[-2:]]
+        remote.resolve_many(urls)
+    except Exception:  # noqa: BLE001 - a convenience only
+        pass
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
@@ -153,7 +185,9 @@ async def coverage(
     else:
         raise ApiError(422, "invalid_request", "Give either lon and lat, or bbox=west,south,east,north.")
     try:
-        return await run_in_threadpool(lambda: catalog.coverage(**where))
+        found = await run_in_threadpool(lambda: catalog.coverage(**where))
+        threading.Thread(target=_resolve_likely, args=(found,), daemon=True).start()
+        return found
     except requests.RequestException:
         raise ApiError(
             502, "catalogue_unavailable", "NASA's catalogue (CMR) could not be reached. Try again in a moment."

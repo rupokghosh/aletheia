@@ -69,6 +69,13 @@ def earthdata_token() -> str | None:
 # Largest window a single request may read (pixels per layer). 25 M px is 100 MB of float32.
 MAX_WINDOW_PIXELS = int(os.environ.get("NISAR_MAX_WINDOW_PIXELS", 25_000_000))
 
-# NISAR granules are written with 4 MiB HDF5 file-space pages, so 4 MiB aligned blocks fetch whole pages.
-BLOCK_SIZE = 4 * 1024 * 1024
-MAX_CACHED_BLOCKS = int(os.environ.get("NISAR_MAX_CACHED_BLOCKS", 64))
+# The size of the blocks the HDF5 library's own reads are served in. Those reads are the file's metadata:
+# measured on a GCOV granule they add up to about 1.3 MB, packed at the start of three places in the file
+# (the superblock, the coordinate arrays and the object headers near the end). 1 MiB blocks cover each
+# place in one request; 4 MiB blocks (the page size the granules are written with) took the same three
+# requests and transferred 12.6 MB for them. Pixel data is not read through these blocks but asked for
+# as exact byte ranges.
+BLOCK_SIZE = 1024 * 1024
+MAX_CACHED_BLOCKS = int(os.environ.get("NISAR_MAX_CACHED_BLOCKS", 256))
+# Reader processes kept alive between requests (h5py serialises reads inside one process).
+READ_PROCESSES = int(os.environ.get("NISAR_READ_PROCESSES", 8))

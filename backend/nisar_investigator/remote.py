@@ -2,7 +2,10 @@
 
 The Earthdata data URL redirects through a login hop to a short-lived signed link. Doing that hop on every
 range request is slow, so the signed link is resolved once per granule and plain range requests are issued
-against it, with an in-memory cache of 4 MiB blocks (the page size NISAR granules are written with).
+against it, with an in-memory cache of blocks for the HDF5 library's own (metadata) reads.
+
+The login itself is the slowest single step of a first read (measured at 2.8 s). It is done once per
+process: the session that logged in keeps its cookies, and later granules resolve in one short hop.
 """
 
 from __future__ import annotations
@@ -17,6 +20,7 @@ from urllib.parse import parse_qs, urlparse
 
 import h5py
 import requests
+from requests.adapters import HTTPAdapter
 
 from . import config
 
@@ -36,6 +40,21 @@ class _SignedLink:
 
 _links: dict[str, _SignedLink] = {}
 _links_lock = threading.Lock()
+_login = requests.Session()  # picks up ~/.netrc for the urs.earthdata.nasa.gov hop, then keeps the cookies
+_login.mount("https://", HTTPAdapter(pool_maxsize=16))
+# Every range request of this process goes through one session, so connections to the archive stay open
+# from one granule (and one request) to the next instead of being negotiated again each time.
+_data = requests.Session()
+_data.trust_env = False  # the signed links need no credentials
+_data.mount("https://", HTTPAdapter(pool_connections=4, pool_maxsize=48))
+
+
+def data_session() -> requests.Session:
+    return _data
+
+
+def _logged_in() -> bool:
+    return any("earthdatacloud" in (cookie.domain or "") for cookie in _login.cookies)
 
 
 def _resolve(data_url: str, *, force: bool = False) -> _SignedLink:
@@ -44,13 +63,12 @@ def _resolve(data_url: str, *, force: bool = False) -> _SignedLink:
         link = _links.get(data_url)
         if link and not force and link.expires_at - time.time() > 120:
             return link
-    session = requests.Session()  # picks up ~/.netrc for the urs.earthdata.nasa.gov hop
     headers = {"Range": "bytes=0-0"}
     token = config.earthdata_token()
     if token:
         headers["Authorization"] = f"Bearer {token}"  # requests drops this header on the cross-host redirect
     try:
-        r = session.get(data_url, headers=headers, timeout=_TIMEOUT)
+        r = _login.get(data_url, headers=headers, timeout=_TIMEOUT)
     except requests.RequestException as exc:
         raise RemoteAccessError(f"could not reach the NISAR archive: {type(exc).__name__}") from None
     if r.status_code in (401, 403):
@@ -74,6 +92,43 @@ def _resolve(data_url: str, *, force: bool = False) -> _SignedLink:
     return link
 
 
+def resolve_many(data_urls: list[str]) -> dict[str, tuple[str, int, float]]:
+    """Signed links for several granules, resolved side by side: {data URL: (link, size, expiry)}.
+
+    Meant for the process that hands granules to reader processes, so that those never log in themselves.
+    A granule that cannot be resolved is left out; its reader then meets and reports the error itself.
+    The links are credentials: they are passed on, never logged.
+    """
+    pending = list(dict.fromkeys(data_urls))
+
+    def one(url: str) -> tuple[str, int, float] | None:
+        try:
+            link = _resolve(url)
+        except RemoteAccessError:
+            return None
+        return link.url, link.size, link.expires_at
+
+    out: dict[str, tuple[str, int, float]] = {}
+    if not pending:
+        return out
+    rest = pending
+    if not _logged_in():
+        first = one(pending[0])  # the first login sets the cookies the others reuse
+        if first:
+            out[pending[0]] = first
+        rest = pending[1:]
+    if rest:
+        with ThreadPoolExecutor(max_workers=min(12, len(rest))) as pool:
+            out.update({url: link for url, link in zip(rest, pool.map(one, rest)) if link})
+    return out
+
+
+def seed_link(data_url: str, signed: tuple[str, int, float]) -> None:
+    """Remember a signed link another process resolved."""
+    with _links_lock:
+        _links[data_url] = _SignedLink(url=signed[0], size=signed[1], expires_at=signed[2])
+
+
 class RangeFile(io.RawIOBase):
     """Read-only, seekable file object backed by HTTP range requests and an LRU block cache."""
 
@@ -85,8 +140,7 @@ class RangeFile(io.RawIOBase):
         self._pos = 0
         self._blocks: OrderedDict[int, bytes] = OrderedDict()
         self._lock = threading.Lock()
-        self._session = requests.Session()
-        self._session.trust_env = False  # the signed link needs no credentials
+        self._session = _data
         self.requests_made = 0
         self.bytes_fetched = 0
         self.network_seconds = 0.0
@@ -192,6 +246,18 @@ class RangeFile(io.RawIOBase):
             for index, data in zip(missing, pool.map(self._fetch, missing)):
                 self._store(index, data)
 
+    def warm(self, offsets: tuple[int, ...]) -> None:
+        """Fetch the blocks holding these byte offsets side by side, before the HDF5 library asks for them
+        one after another. For places every granule of a product is known to need."""
+        indexes = sorted({offset // config.BLOCK_SIZE for offset in offsets if 0 <= offset < self.size})
+        with self._lock:
+            missing = [i for i in indexes if i not in self._blocks]
+        if not missing:
+            return
+        with ThreadPoolExecutor(max_workers=len(missing)) as pool:
+            for index, data in zip(missing, pool.map(self._fetch, missing)):
+                self._store(index, data)
+
     def stats(self) -> dict:
         return {
             "requests": self.requests_made,
@@ -204,8 +270,10 @@ class RangeFile(io.RawIOBase):
 class RemoteGranule:
     """Context manager: an open h5py.File over a RangeFile, closed cleanly on exit."""
 
-    def __init__(self, data_url: str):
+    def __init__(self, data_url: str, warm: tuple[int, ...] = ()):
         self.raw = RangeFile(data_url)
+        if warm:
+            self.raw.warm(warm)
         self.h5 = h5py.File(self.raw, "r")
 
     def __enter__(self) -> "RemoteGranule":

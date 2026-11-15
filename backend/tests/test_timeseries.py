@@ -11,7 +11,7 @@ from pyproj import Transformer
 
 from nisar_investigator import config, provenance
 from nisar_investigator.remote import RemoteAccessError
-from nisar_investigator.schemas import SeriesPoint, TimeSeriesRequest
+from nisar_investigator.schemas import Granule, SeriesPoint, TimeSeriesRequest
 from nisar_investigator.workflows import timeseries
 from nisar_investigator.workflows.timeseries import DateRecord, Skip
 
@@ -369,3 +369,51 @@ def test_kamloops_lake_first_of_july_stands_out_on_real_data():
     assert all(p.tier == "provisional" for p in series[77].points)
     skipped_tracks = {entry["track"] for entry in result.stats["skipped"]}
     assert skipped_tracks == {5, 100}
+
+
+# ------------------------------------------------------------ frames that repeat each other
+
+
+def _stack_granule(track: int, frame: int, day: str) -> Granule:
+    return Granule(
+        granule_id=f"G_{track}_{frame}_{day}", product="GCOV", tier="provisional", url="https://example.invalid/x.h5",
+        track=track, frame=frame, direction="ascending", mode="4005", polarizations=["HH", "HV"], date=day,
+    )
+
+
+def _probe(granule: Granule, coverage: float) -> timeseries.DateRecord:
+    return timeseries.DateRecord(
+        granule=granule, stats={}, image=None, corners=[], region_area_km2=100.0, pixel_size_m=(10.0, 10.0), coverage=coverage
+    )
+
+
+def _stacks(spec: dict[tuple[int, int], list[str]]):
+    return {(track, "ascending", frame): [_stack_granule(track, frame, d) for d in days] for (track, frame), days in spec.items()}
+
+
+def test_a_frame_that_repeats_its_neighbour_is_read_once():
+    days = ["2026-10-01", "2026-10-13", "2026-10-25"]
+    stacks = _stacks({(112, 8): days, (112, 9): days, (11, 40): days})
+    probed = {key: [_probe(items[-1], 1.0)] for key, items in stacks.items()}
+    repeats = timeseries.duplicate_frames(stacks, probed)
+    assert len(repeats) == 1 and repeats[0][0] == 112  # one of the two frames of track 112; track 11 untouched
+
+
+def test_a_frame_with_a_date_its_neighbour_lacks_is_kept():
+    stacks = _stacks({(4, 20): ["2026-10-01", "2026-10-13"], (4, 21): ["2026-10-13", "2026-10-25"]})
+    probed = {key: [_probe(items[-1], 1.0)] for key, items in stacks.items()}
+    assert timeseries.duplicate_frames(stacks, probed) == []
+
+
+def test_a_frame_that_covers_only_part_of_the_area_is_not_a_repeat():
+    days = ["2026-10-01", "2026-10-13"]
+    stacks = _stacks({(112, 8): days, (112, 9): days})
+    probed = {(112, "ascending", 8): [_probe(stacks[(112, "ascending", 8)][-1], 1.0)],
+              (112, "ascending", 9): [_probe(stacks[(112, "ascending", 9)][-1], 0.9)]}
+    assert timeseries.duplicate_frames(stacks, probed) == []
+
+
+def test_the_frame_with_more_dates_is_the_one_kept():
+    stacks = _stacks({(4, 20): ["2026-10-01", "2026-10-13", "2026-10-25"], (4, 21): ["2026-10-13", "2026-10-25"]})
+    probed = {key: [_probe(items[-1], 1.0)] for key, items in stacks.items()}
+    assert timeseries.duplicate_frames(stacks, probed) == [(4, "ascending", 21)]

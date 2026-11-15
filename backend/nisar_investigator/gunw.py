@@ -44,7 +44,7 @@ from pyproj import Transformer
 
 from . import config
 from .gcov import OutsideFrame, WindowTooLarge  # same errors for every product, so callers catch one set
-from .remote import RemoteAccessError, RemoteGranule, _resolve
+from .remote import RemoteAccessError, RemoteGranule, _resolve, data_session
 from .schemas import Granule
 
 __all__ = ["GunwCutout", "OutsideFrame", "WindowTooLarge", "read_window", "valid_sample_mask", "water_mask"]
@@ -373,8 +373,7 @@ def _fetch_exact(raw, ranges: list[tuple[int, int]], workers: int = PREFETCH_WOR
     Uses the signed link the RangeFile already resolved; it is never logged or returned.
     """
     spans = _merge_ranges(ranges)
-    session = requests.Session()
-    session.trust_env = False  # the signed link needs no credentials
+    session = data_session()  # shared and kept open: no new connections per granule
     seconds = [0.0]
 
     def get(span: tuple[int, int]) -> bytes:
@@ -400,14 +399,11 @@ def _fetch_exact(raw, ranges: list[tuple[int, int]], workers: int = PREFETCH_WOR
             time.sleep(0.5 * (attempt + 1))
         raise RemoteAccessError("could not read the granule")
 
-    try:
-        if len(spans) > 1:
-            with ThreadPoolExecutor(max_workers=min(workers, len(spans))) as pool:
-                blobs = list(pool.map(get, spans))
-        else:
-            blobs = [get(span) for span in spans]
-    finally:
-        session.close()
+    if len(spans) > 1:
+        with ThreadPoolExecutor(max_workers=min(workers, len(spans))) as pool:
+            blobs = list(pool.map(get, spans))
+    else:
+        blobs = [get(span) for span in spans]
     out: dict[tuple[int, int], bytes] = {}
     for offset, length in set(ranges):
         for (start, size), blob in zip(spans, blobs):

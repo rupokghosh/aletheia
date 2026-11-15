@@ -4,15 +4,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 import time
 from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass, field
 
 import numpy as np
 from pyproj import Transformer
 
-from . import config
-from .remote import RemoteGranule
+from . import config, remote
+from .remote import RemoteAccessError, RemoteGranule
 from .schemas import Granule
 
 GRID_PATH = "/science/LSAR/GCOV/grids/frequency{freq}"
@@ -22,6 +24,10 @@ POL_TO_LAYER = {"HH": "HHHH", "HV": "HVHV", "VH": "VHVH", "VV": "VVVV"}
 # still carry numbers (down to 1e-14 in power), so they must be masked explicitly.
 MASK_LAYER = "mask"
 _MASK_INVALID = (0, 255)
+# Where every GCOV granule keeps what a read needs first: the superblock and first object headers, and the
+# two coordinate arrays at the start of the first data page (traced on several granules). These are fetched
+# side by side on opening; the HDF5 library would otherwise ask for them one after another.
+_OPENING_OFFSETS = (0, 1024 * 1024, 4 * 1024 * 1024)
 
 
 class OutsideFrame(ValueError):
@@ -123,6 +129,30 @@ def _cache_path(granule_id: str, bbox, layers: tuple[str, ...], freq: str):
     return path / f"{digest}.npz"
 
 
+def _read_layers(raw, datasets: dict, window: tuple[int, int, int, int]) -> tuple[dict[str, np.ndarray], dict | None]:
+    """The window of each dataset, with the statistics of the exact-range requests (None on the block path).
+
+    The chunks under the window are asked for as exact byte ranges, all at once, and decoded here. Reading
+    them through h5py instead costs whole blocks per chunk: measured on a 10 km window, 38 MB for 12 MB of
+    chunks. That path remains as the fallback for a storage layout the decoder does not know.
+    """
+    from . import gunw  # here, not at the top: gunw imports this module
+
+    r0, r1, c0, c1 = window
+    try:
+        arrays, _, stats = gunw._read_exact(raw, datasets, window, None)  # noqa: SLF001
+        return arrays, stats
+    except RemoteAccessError:
+        raise
+    except Exception:  # noqa: BLE001 - unexpected storage layout: h5py knows how to read it
+        pass
+    ranges: list[tuple[int, int]] = []
+    for dset in datasets.values():
+        ranges += _chunk_ranges(dset, r0, r1, c0, c1)
+    raw.prefetch(ranges)
+    return {name: dset[r0:r1, c0:c1] for name, dset in datasets.items()}, None
+
+
 def read_window(
     granule: Granule,
     bbox: tuple[float, float, float, float],
@@ -133,8 +163,9 @@ def read_window(
 ) -> Cutout:
     """Read the pixels of one GCOV granule that fall inside a lon/lat box.
 
-    Only the HDF5 pages holding the needed chunks are transferred (typically under 1% of the file).
-    Polarizations the granule does not carry are skipped silently; check ``cutout.layers``.
+    Only the file's metadata and the chunks under the box are transferred (typically a quarter of one
+    percent of the file). Polarizations the granule does not carry are skipped silently; check
+    ``cutout.layers``.
     """
     layers = tuple(POL_TO_LAYER[p] for p in polarizations if p in POL_TO_LAYER)
     cache = _cache_path(granule.granule_id, bbox, layers, freq)
@@ -153,7 +184,7 @@ def read_window(
         )
 
     t0 = time.time()
-    with RemoteGranule(granule.url) as rg:
+    with RemoteGranule(granule.url, warm=_OPENING_OFFSETS) as rg:
         grid = rg.h5[GRID_PATH.format(freq=freq)]
         x = grid["xCoordinates"][:]
         y = grid["yCoordinates"][:]
@@ -163,24 +194,29 @@ def read_window(
 
         present = [name for name in layers if name in grid]
         has_mask = MASK_LAYER in grid
-        ranges: list[tuple[int, int]] = []
-        for name in present + ([MASK_LAYER] if has_mask else []):
-            ranges += _chunk_ranges(grid[name], r0, r1, c0, c1)
-        rg.raw.prefetch(ranges)
+        wanted = present + ([MASK_LAYER] if has_mask else [])
+        arrays, exact = _read_layers(rg.raw, {name: grid[name] for name in wanted}, (r0, r1, c0, c1))
 
-        invalid = np.isin(grid[MASK_LAYER][r0:r1, c0:c1], _MASK_INVALID) if has_mask else None
+        invalid = np.isin(arrays[MASK_LAYER], _MASK_INVALID) if has_mask else None
         out: dict[str, np.ndarray] = {}
         for name in present:
-            dset = grid[name]
-            arr = dset[r0:r1, c0:c1].astype(np.float32)
-            fill = dset.fillvalue
+            arr = arrays[name].astype(np.float32)
+            fill = grid[name].fillvalue
             if fill is not None and np.isfinite(fill):
                 arr[arr == fill] = np.nan
             arr[~np.isfinite(arr) | (arr <= 0)] = np.nan
             if invalid is not None:
                 arr[invalid] = np.nan
             out[name] = arr
-        io_stats = rg.raw.stats()
+        io_stats = rg.raw.stats()  # the metadata blocks (and everything, on the block path)
+        if exact is not None:
+            fetched = rg.raw.bytes_fetched + exact["bytes"]
+            io_stats = {
+                "requests": rg.raw.requests_made + exact["requests"],
+                "megabytes": round(fetched / 1e6, 1),
+                "fraction_of_file": round(fetched / rg.raw.size, 5) if rg.raw.size else None,
+                "network_seconds": round(rg.raw.network_seconds + exact["network_seconds"], 2),
+            }
         file_gb = round(rg.raw.size / 1e9, 2)
 
     yw = y[r0:r1]
@@ -217,11 +253,43 @@ def read_window(
 
 
 def _read_one(args) -> Cutout | Exception:
-    granule, bbox, pols, freq, use_cache = args
+    granule, bbox, pols, freq, use_cache, signed = args
     try:
+        if signed is not None:
+            remote.seed_link(granule.url, signed)  # resolved by the calling process: no login here
         return read_window(granule, bbox, pols, freq=freq, use_cache=use_cache)
     except Exception as exc:  # noqa: BLE001 - returned to the caller, one bad date must not sink a series
         return exc
+
+
+# Reader processes are started once and kept: starting them (and importing numpy, h5py and pyproj in each)
+# costs about a second, which used to be paid by every request.
+_readers: ProcessPoolExecutor | None = None
+_readers_lock = threading.Lock()
+
+
+def _reader_pool(fresh: bool = False) -> ProcessPoolExecutor:
+    global _readers
+    with _readers_lock:
+        if fresh and _readers is not None:
+            _readers.shutdown(wait=False, cancel_futures=True)
+            _readers = None
+        if _readers is None:
+            _readers = ProcessPoolExecutor(max_workers=config.READ_PROCESSES)
+        return _readers
+
+
+def _ready(_: int) -> bool:
+    time.sleep(0.25)  # long enough that every process of the pool takes one of these
+    return True
+
+
+def warm_readers() -> None:
+    """Start the reader processes ahead of the first request. Safe to call from a background thread."""
+    try:
+        list(_reader_pool().map(_ready, range(config.READ_PROCESSES)))
+    except (OSError, RuntimeError):
+        pass
 
 
 def read_windows(
@@ -237,21 +305,26 @@ def read_windows(
 
     Returns one item per granule, in order: a Cutout, or the exception that granule raised.
     """
-    jobs = [(g, bbox, polarizations, freq, use_cache) for g in granules]
+    jobs = [(g, bbox, polarizations, freq, use_cache, None) for g in granules]
     # Windows already on disk are loaded here: starting worker processes for them costs seconds, not milliseconds.
     layers = tuple(POL_TO_LAYER[p] for p in polarizations if p in POL_TO_LAYER)
     results: dict[int, Cutout | Exception] = {}
     for i, job in enumerate(jobs):
         if use_cache and _cache_path(job[0].granule_id, bbox, layers, freq).exists():
             results[i] = _read_one(job)
-    remote = [i for i in range(len(jobs)) if i not in results]
-    if len(remote) <= 1 or max_workers <= 1:
-        fetched = [_read_one(jobs[i]) for i in remote]
+    todo = [i for i in range(len(jobs)) if i not in results]
+    if len(todo) <= 1 or max_workers <= 1:
+        fetched = [_read_one(jobs[i]) for i in todo]
     else:
+        # The login happens here, once and side by side, so that no reader process has to do it.
+        links = remote.resolve_many([jobs[i][0].url for i in todo])
+        sent = [(*jobs[i][:5], links.get(jobs[i][0].url)) for i in todo]
         try:
-            with ProcessPoolExecutor(max_workers=min(max_workers, len(remote))) as pool:
-                fetched = list(pool.map(_read_one, [jobs[i] for i in remote]))
+            try:
+                fetched = list(_reader_pool().map(_read_one, sent))
+            except BrokenProcessPool:  # a reader process died: start a new set and try once more
+                fetched = list(_reader_pool(fresh=True).map(_read_one, sent))
         except (OSError, RuntimeError):  # environments without process support
-            fetched = [_read_one(jobs[i]) for i in remote]
-    results.update(zip(remote, fetched))
+            fetched = [_read_one(jobs[i]) for i in todo]
+    results.update(zip(todo, fetched))
     return [results[i] for i in range(len(jobs))]
