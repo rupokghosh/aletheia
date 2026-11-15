@@ -130,6 +130,20 @@ def _export(showcase: dict, investigation: dict, artifacts_dir: Path) -> dict:
     }
 
 
+def _add_replay(investigation: dict) -> None:
+    """Give each stored analysis its replay token. The pictures of a showcase are files of the site, but
+    reading the value at a spot is done by the server, which has to be able to compute the result again."""
+    from nisar_investigator import provenance
+    from nisar_investigator.schemas import WorkflowResult
+
+    for stored in investigation["results"].values():
+        if not isinstance(stored, dict) or stored.get("replay") or stored.get("workflow") not in ("change", "motion", "timeseries"):
+            continue
+        request = provenance._replay_request(WorkflowResult.model_validate(stored))
+        if request is not None:
+            stored["replay"] = provenance.replay_token(stored["workflow"], request)
+
+
 def _add_charts() -> None:
     """Give exported showcases the chart data newer builds compute, without calling the language model.
 
@@ -207,6 +221,7 @@ def main() -> None:
                 continue
             investigation = json.loads(path.read_text())
             investigation["results"] = {k: plain.annotate_dict(v) for k, v in investigation["results"].items()}
+            _add_replay(investigation)
             path.write_text(json.dumps(investigation, indent=1))
             entries[showcase["id"]].update(title=showcase["title"], place_name=showcase["place_name"])
         (OUT / "index.json").write_text(json.dumps([entries[s["id"]] for s in SHOWCASES if s["id"] in entries], indent=1))

@@ -4812,6 +4812,157 @@
     }
    ],
    "series": [],
+   "charts": [
+    {
+     "id": "change_shares",
+     "kind": "shares",
+     "title": "What happened across the area",
+     "description": "Shares of the analysed area, at the middle threshold.",
+     "data": {
+      "unit": "km2",
+      "total": 313.39,
+      "parts": [
+       {
+        "key": "brighter",
+        "label": "Brighter",
+        "value": 2.48
+       },
+       {
+        "key": "darker",
+        "label": "Darker",
+        "value": 0.08
+       },
+       {
+        "key": "steady",
+        "label": "No clear change",
+        "value": 310.83
+       },
+       {
+        "key": "cannot_tell",
+        "label": "Too dark to judge",
+        "value": 0.0
+       }
+      ]
+     }
+    },
+    {
+     "id": "change_distribution",
+     "kind": "histogram",
+     "title": "How much each part of the area changed",
+     "description": "Most of the area sits in the middle: no change that can be told from the radar's own speckle. The coloured tails are the parts that became clearly brighter or darker.",
+     "data": {
+      "unit": "dB",
+      "edges": [
+       -7.0,
+       -6.708,
+       -6.417,
+       -6.125,
+       -5.833,
+       -5.542,
+       -5.25,
+       -4.958,
+       -4.667,
+       -4.375,
+       -4.083,
+       -3.792,
+       -3.5,
+       -3.208,
+       -2.917,
+       -2.625,
+       -2.333,
+       -2.042,
+       -1.75,
+       -1.458,
+       -1.167,
+       -0.875,
+       -0.583,
+       -0.292,
+       0.0,
+       0.292,
+       0.583,
+       0.875,
+       1.167,
+       1.458,
+       1.75,
+       2.042,
+       2.333,
+       2.625,
+       2.917,
+       3.208,
+       3.5,
+       3.792,
+       4.083,
+       4.375,
+       4.667,
+       4.958,
+       5.25,
+       5.542,
+       5.833,
+       6.125,
+       6.417,
+       6.708,
+       7.0
+      ],
+      "area_km2": [
+       0.0007,
+       0.0001,
+       0.0014,
+       0.0024,
+       0.0012,
+       0.0028,
+       0.0023,
+       0.0047,
+       0.0095,
+       0.0146,
+       0.0241,
+       0.0398,
+       0.0667,
+       0.1038,
+       0.227,
+       0.5241,
+       1.2403,
+       2.6589,
+       5.3962,
+       10.5141,
+       19.5312,
+       32.0059,
+       41.8336,
+       42.4895,
+       33.3012,
+       21.456,
+       13.2945,
+       9.4773,
+       8.9864,
+       10.3143,
+       11.9116,
+       12.4312,
+       11.6052,
+       9.4061,
+       6.5703,
+       3.9124,
+       2.0449,
+       1.0303,
+       0.4997,
+       0.2333,
+       0.1234,
+       0.0465,
+       0.0241,
+       0.0108,
+       0.0067,
+       0.0047,
+       0.0019,
+       0.0021
+      ],
+      "band": [
+       -3.04,
+       3.04
+      ],
+      "band_label": "no clear change",
+      "low_label": "darker",
+      "high_label": "brighter"
+     }
+    }
+   ],
    "stats": {
     "effort": {
      "files": 2,
@@ -5184,157 +5335,7 @@
      "format": "json"
     }
    ],
-   "charts": [
-    {
-     "id": "change_shares",
-     "kind": "shares",
-     "title": "What happened across the area",
-     "description": "Shares of the analysed area, at the middle threshold.",
-     "data": {
-      "unit": "km2",
-      "total": 313.39,
-      "parts": [
-       {
-        "key": "brighter",
-        "label": "Brighter",
-        "value": 2.48
-       },
-       {
-        "key": "darker",
-        "label": "Darker",
-        "value": 0.08
-       },
-       {
-        "key": "steady",
-        "label": "No clear change",
-        "value": 310.83
-       },
-       {
-        "key": "cannot_tell",
-        "label": "Too dark to judge",
-        "value": 0.0
-       }
-      ]
-     }
-    },
-    {
-     "id": "change_distribution",
-     "kind": "histogram",
-     "title": "How much each part of the area changed",
-     "description": "Most of the area sits in the middle: no change that can be told from the radar's own speckle. The coloured tails are the parts that became clearly brighter or darker.",
-     "data": {
-      "unit": "dB",
-      "edges": [
-       -7.0,
-       -6.708,
-       -6.417,
-       -6.125,
-       -5.833,
-       -5.542,
-       -5.25,
-       -4.958,
-       -4.667,
-       -4.375,
-       -4.083,
-       -3.792,
-       -3.5,
-       -3.208,
-       -2.917,
-       -2.625,
-       -2.333,
-       -2.042,
-       -1.75,
-       -1.458,
-       -1.167,
-       -0.875,
-       -0.583,
-       -0.292,
-       0.0,
-       0.292,
-       0.583,
-       0.875,
-       1.167,
-       1.458,
-       1.75,
-       2.042,
-       2.333,
-       2.625,
-       2.917,
-       3.208,
-       3.5,
-       3.792,
-       4.083,
-       4.375,
-       4.667,
-       4.958,
-       5.25,
-       5.542,
-       5.833,
-       6.125,
-       6.417,
-       6.708,
-       7.0
-      ],
-      "area_km2": [
-       0.0007,
-       0.0001,
-       0.0014,
-       0.0024,
-       0.0012,
-       0.0028,
-       0.0023,
-       0.0047,
-       0.0095,
-       0.0146,
-       0.0241,
-       0.0398,
-       0.0667,
-       0.1038,
-       0.227,
-       0.5241,
-       1.2403,
-       2.6589,
-       5.3962,
-       10.5141,
-       19.5312,
-       32.0059,
-       41.8336,
-       42.4895,
-       33.3012,
-       21.456,
-       13.2945,
-       9.4773,
-       8.9864,
-       10.3143,
-       11.9116,
-       12.4312,
-       11.6052,
-       9.4061,
-       6.5703,
-       3.9124,
-       2.0449,
-       1.0303,
-       0.4997,
-       0.2333,
-       0.1234,
-       0.0465,
-       0.0241,
-       0.0108,
-       0.0067,
-       0.0047,
-       0.0019,
-       0.0021
-      ],
-      "band": [
-       -3.04,
-       3.04
-      ],
-      "band_label": "no clear change",
-      "low_label": "darker",
-      "high_label": "brighter"
-     }
-    }
-   ]
+   "replay": "eNo1y-EKwiAYheF7Ob8_Rd2azivYPUTE53I1ijlEKBq79wzq5-E574YnPMYbL9cIQobfEEJ6wR-F66Ry1CjZWBLuIF37HW1_Ily4xHOIU8qx5kaZTqheGIsf8VRi_otWwugqJfN4h9fGEtb04Dy_ucxpqb9hwL5_AFiSJps"
   }
  },
  "report": {
