@@ -246,32 +246,33 @@
 /* MapLibre controls, restyled to match the cards. */
 /* What is behind the globe. The map canvas is see-through outside the planet, so this shows around it:
    daylight that is brightest behind the planet and cooler toward the corners, and the glow of the
-   atmosphere along the planet's edge, all as smooth gradients. MapView keeps the three variables fitted to
-   the globe on screen. Before the map has drawn, the ball in the sea's colour stands in for it. */
+   atmosphere along the planet's edge, all as smooth gradients. MapView keeps the variables fitted to the
+   globe on screen. Nothing here is drawn where the planet is, so if the fit were ever off, the worst that
+   could happen is a glow slightly out of place. */
 .globe-backdrop {
   --globe-x: 60%;
   --globe-y: 50%;
-  --globe-r: 280px;
+  --globe-r: 0px;
+  --globe-glow: 0;
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(
-      circle at var(--globe-x) var(--globe-y),
-      #17365c calc(var(--globe-r) * 0.992),
-      rgb(74 139 240 / 0.5) var(--globe-r),
-      rgb(104 162 248 / 0.26) calc(var(--globe-r) * 1.07),
-      rgb(140 186 255 / 0.1) calc(var(--globe-r) * 1.2),
-      rgb(140 186 255 / 0) calc(var(--globe-r) * 1.42)
-    ),
-    radial-gradient(
-      circle at var(--globe-x) var(--globe-y),
-      #ffffff 0,
-      #f8fafe calc(var(--globe-r) * 1.4),
-      #eef3fa calc(var(--globe-r) * 2.2),
-      #e3eaf5 calc(var(--globe-r) * 3.2),
-      #d9e2f0 calc(var(--globe-r) * 4.6)
-    );
+  background: radial-gradient(circle at 60% 50%, #ffffff 0, #f7f9fd 28%, #ecf1f9 55%, #dfe7f3 100%);
+}
+
+.globe-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: var(--globe-glow);
+  background: radial-gradient(
+    circle at var(--globe-x) var(--globe-y),
+    rgb(74 139 240 / 0) calc(var(--globe-r) * 0.96),
+    rgb(74 139 240 / 0.5) var(--globe-r),
+    rgb(104 162 248 / 0.26) calc(var(--globe-r) * 1.07),
+    rgb(140 186 255 / 0.1) calc(var(--globe-r) * 1.2),
+    rgb(140 186 255 / 0) calc(var(--globe-r) * 1.42)
+  );
 }
 
 .maplibregl-map {

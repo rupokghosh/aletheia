@@ -28,6 +28,8 @@ import { useResultLayers } from "./useResultLayers";
 
 /** MapLibre 6 loads its worker as a separate module; scripts/copy-maplibre-worker.mjs puts it here. */
 const WORKER_URL = "/vendor/maplibre-gl-worker.mjs";
+/** The highest latitude of the Web Mercator world, where MapLibre stops scaling its globe. */
+const MAX_GLOBE_LATITUDE = 85.051129;
 const NO_LAYERS: ReturnType<typeof mapLayersFor> = [];
 /** Side of the square placed around a clicked spot, in km: big enough to show context, small enough to be fast. */
 const PICK_KM = 10;
@@ -117,15 +119,21 @@ export default function MapView() {
       const centre = instance.getCenter();
       const point = instance.project(centre);
       const world = 512 * 2 ** instance.getZoom();
-      const sphere = world / (2 * Math.PI) / Math.cos((centre.lat * Math.PI) / 180);
+      // The same size MapLibre gives its globe: it stops growing with latitude at the edge of the Web
+      // Mercator world, so the latitude is held there too. (Unclamped, the size runs away near the poles.)
+      const latitude = Math.min(Math.abs(centre.lat), MAX_GLOBE_LATITUDE);
+      const sphere = world / (2 * Math.PI) / Math.cos((latitude * Math.PI) / 180);
       // The camera looks at the sphere in perspective, from `focal` pixels above its nearest point, so the
       // edge it sees is a circle a little smaller than the sphere itself.
       const fov = (instance.getVerticalFieldOfView() * Math.PI) / 180;
       const focal = (0.5 * instance.getCanvas().clientHeight) / Math.tan(fov / 2);
       const seen = (focal * sphere) / Math.sqrt(focal * focal + 2 * focal * sphere);
+      // Zoomed in, the planet's edge is far outside the window and the glow has nothing to follow.
+      const visible = Number.isFinite(seen) && seen < 4 * Math.max(backdrop.clientWidth, backdrop.clientHeight);
       backdrop.style.setProperty("--globe-x", `${point.x.toFixed(1)}px`);
       backdrop.style.setProperty("--globe-y", `${point.y.toFixed(1)}px`);
-      backdrop.style.setProperty("--globe-r", `${seen.toFixed(1)}px`);
+      backdrop.style.setProperty("--globe-r", `${(visible ? seen : 0).toFixed(1)}px`);
+      backdrop.style.setProperty("--globe-glow", visible ? "1" : "0");
     };
     fitBackdrop();
     instance.on("move", fitBackdrop);
