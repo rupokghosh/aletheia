@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "nisar-investigator"
 version = "0.1.0"
 description = "Ask a question about any place on Earth and get a NISAR radar-backed answer with receipts."
-readme = "../README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.12"
 dependencies = [

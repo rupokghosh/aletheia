@@ -28,3 +28,4 @@ reports/
 
 # Third-party design skills (emilkowalski/skills, MIT): used as guidance, not redistributed here
 .claude/skills/
+.vercel
