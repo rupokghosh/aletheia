@@ -21,21 +21,21 @@ function newStar(id: number): Star {
   const rightward = Math.random() < 0.5;
   return {
     id,
-    x: rightward ? between(0.3, 0.72) : between(0.55, 0.96),
-    y: between(0.04, 0.42),
-    angle: rightward ? between(16, 38) : between(142, 164),
-    length: between(110, 190),
-    travel: between(320, 520),
-    seconds: between(1.1, 1.6),
+    x: rightward ? between(0.34, 0.66) : between(0.62, 0.95),
+    y: between(0.03, 0.26),
+    angle: rightward ? between(16, 34) : between(146, 164),
+    length: between(200, 320),
+    travel: between(560, 860),
+    seconds: between(1.8, 2.5),
   };
 }
 
-const FIRST_WAIT_SECONDS = [6, 10] as const;
-const WAIT_SECONDS = [22, 48] as const;
+const FIRST_WAIT_SECONDS = [3, 6] as const;
+const WAIT_SECONDS = [14, 26] as const;
 
 /**
- * Now and then a shooting star crosses the sky behind the globe: one at a time, with long quiet gaps
- * (about two a minute at most). It is drawn behind the map, so it passes behind the planet and the cards.
+ * Now and then a shooting star crosses the sky behind the globe: one at a time, with quiet gaps
+ * of a quarter to half a minute. It is drawn behind the map, so it passes behind the planet and the cards.
  * None are shown to people who ask their system for reduced motion, or while the page is hidden.
  */
 export function ShootingStars() {

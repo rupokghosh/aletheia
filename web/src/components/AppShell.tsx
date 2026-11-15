@@ -47,7 +47,7 @@ function Workspace() {
       {state.panelOpen ? (
         <aside
           aria-label={APP_NAME}
-          className="absolute inset-x-0 bottom-0 z-20 flex max-h-[62dvh] flex-col overflow-hidden rounded-t-2xl border border-line bg-panel shadow-card md:inset-x-auto md:top-4 md:bottom-auto md:left-4 md:max-h-[calc(100dvh-2rem)] md:w-[400px] md:rounded-2xl"
+          className="absolute inset-x-0 bottom-0 z-20 flex max-h-[62dvh] flex-col overflow-hidden rounded-t-2xl border border-line bg-panel shadow-card md:inset-x-auto md:top-4 md:bottom-auto md:left-4 md:max-h-[calc(100dvh-2rem)] md:w-[460px] md:rounded-2xl"
         >
           <SidePanel />
         </aside>

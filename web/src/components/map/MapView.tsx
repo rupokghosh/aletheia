@@ -35,7 +35,7 @@ const NO_LAYERS: ReturnType<typeof mapLayersFor> = [];
 /** Side of the square placed around a clicked spot, in km: big enough to show context, small enough to be fast. */
 const PICK_KM = 10;
 /** Width of the floating card plus its margins: the map keeps this much clear on a wide screen. */
-const CARD_SPACE = 432;
+const CARD_SPACE = 492;
 
 /**
  * The part of the map the card covers, as camera padding: the left on a wide screen, the bottom
@@ -334,7 +334,7 @@ export default function MapView() {
       <div ref={containerRef} className="h-full w-full" />
 
       {supported ? null : (
-        <p className="absolute inset-0 grid place-items-center p-8 text-center text-[15px] text-ink-2 md:pl-[432px]" role="alert">
+        <p className="absolute inset-0 grid place-items-center p-8 text-center text-[15px] text-ink-2 md:pl-[492px]" role="alert">
           The map needs WebGL 2, which this browser or device does not provide. Results, charts and receipts still
           work; enter the area as coordinates.
         </p>
@@ -368,7 +368,7 @@ export default function MapView() {
       ) : null}
 
       {visibleSpot ? (
-        <div className="pointer-events-none absolute inset-x-3 top-16 z-20 flex justify-center md:top-auto md:right-auto md:bottom-10 md:left-[444px] md:w-[420px] md:justify-start">
+        <div className="pointer-events-none absolute inset-x-3 top-16 z-20 flex justify-center md:top-auto md:right-auto md:bottom-10 md:left-[504px] md:w-[420px] md:justify-start">
           <SpotCard spot={visibleSpot} onClose={() => setSpot(null)} />
         </div>
       ) : null}
