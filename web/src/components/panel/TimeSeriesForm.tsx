@@ -70,7 +70,7 @@ export function TimeSeriesForm({ bbox, views }: { bbox: BBox; views: StackView[]
         </div>
       </div>
 
-      <p className="text-sm text-ink-2">Reads {plural(count, "image")}. Each takes a few seconds.</p>
+      <p className="text-sm text-ink-2">Reads {plural(count, "image")}, straight from NASA’s archive.</p>
 
       <details>
         <summary className="w-max text-sm text-ink-2 underline underline-offset-2 hover:text-ink">Options</summary>

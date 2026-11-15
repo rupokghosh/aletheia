@@ -1,11 +1,12 @@
 "use client";
 
+import { ResultCharts } from "@/components/charts/ResultCharts";
 import { Button } from "@/components/ui/Button";
 import { Disclosure } from "@/components/ui/Disclosure";
 import { Notice } from "@/components/ui/Notice";
 import { SourceBadge } from "@/components/ui/SourceBadge";
 import { TargetIcon } from "@/components/ui/icons";
-import { formatSeconds, plural, prettyUnits } from "@/lib/format";
+import { plural, prettyUnits } from "@/lib/format";
 import { boundsOf } from "@/lib/geo";
 import { useApp, type StoredResult } from "@/lib/store";
 import type { WorkflowKind } from "@/lib/types";
@@ -84,7 +85,6 @@ export function ResultView({ stored }: { stored: StoredResult }) {
   const extent = boundsOf(result.layers.flatMap((layer) => layer.corners));
   const statCount = Object.keys(result.stats).length;
   const moreCount = moreRanges.length + single.length;
-  const seconds = receipt.steps.reduce((sum, step) => sum + (step.seconds ?? 0), 0);
   const headline = prettyUnits(result.summary.headline);
 
   return (
@@ -112,6 +112,12 @@ export function ResultView({ stored }: { stored: StoredResult }) {
       {result.series.length > 0 ? (
         <div className="mt-6">
           <SeriesChart series={result.series} />
+        </div>
+      ) : null}
+
+      {result.charts && result.charts.length > 0 ? (
+        <div className="mt-6">
+          <ResultCharts charts={result.charts} />
         </div>
       ) : null}
 
@@ -162,9 +168,7 @@ export function ResultView({ stored }: { stored: StoredResult }) {
 
         <Disclosure
           title="Sources and receipt"
-          summary={[plural(receipt.granules.length, "file"), plural(receipt.steps.length, "step"), seconds > 0 ? formatSeconds(seconds) : null]
-            .filter(Boolean)
-            .join(", ")}
+          summary={`${plural(receipt.granules.length, "file")}, ${plural(receipt.steps.length, "step")}`}
         >
           <ReceiptSection result={result} source={source} />
         </Disclosure>

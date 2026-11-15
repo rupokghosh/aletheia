@@ -86,6 +86,8 @@ function Statements({ items, empty, render }: { items: string[]; empty: string; 
 
 interface ReportViewProps {
   report: Report;
+  /** the figures and charts behind the report, shown straight after the answer */
+  evidence?: ReactNode;
   /** ids of the results this investigation produced */
   refs: string[];
   /** which language model planned the steps and wrote the report */
@@ -97,7 +99,7 @@ interface ReportViewProps {
  * links to the results), what might explain it (hypotheses) and what is unknown. Then a small line
  * with the confidence and the model that wrote it.
  */
-export function ReportView({ report, refs, model }: ReportViewProps) {
+export function ReportView({ report, refs, model, evidence }: ReportViewProps) {
   const confidence = /^\s*(low|medium|high)\b[\s:,.-]*([\s\S]*)$/i.exec(report.confidence);
   const level = confidence?.[1].toLowerCase();
   const reason = confidence ? confidence[2] : report.confidence;
@@ -109,6 +111,8 @@ export function ReportView({ report, refs, model }: ReportViewProps) {
           <Linked text={prettyUnits(report.answer)} refs={refs} />
         </p>
       </Part>
+
+      {evidence}
 
       <Part title="Observed" about="Measured from NISAR data.">
         <Statements items={report.observed} empty="Nothing was measured." render={(text) => <Observed text={text} refs={refs} />} />

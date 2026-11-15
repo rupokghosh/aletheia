@@ -13,7 +13,7 @@ from datetime import date
 
 import numpy as np
 
-from .. import catalog, gcov, ops, provenance, render
+from .. import catalog, charts, gcov, ops, provenance, render
 from ..schemas import (
     Caveat,
     ChangeRequest,
@@ -663,12 +663,18 @@ def _run(req: ChangeRequest, request: dict, rec: provenance.Recorder) -> Workflo
         track=track,
         pol=primary,
     )
+    limit = float(np.clip(np.ceil(2 * main.thresholds_db["central"]), 4, 12))  # the range of the change map
+    drawn = [
+        charts.change_shares(main.valid, main.increased["central"], main.decreased["central"], main.cannot_tell, pixel_area),
+        charts.change_distribution(main.change_db, main.measurable, main.thresholds_db["central"], limit, pixel_area),
+    ]
     result = WorkflowResult(
         id=result_id,
         workflow="change",
         request=request,
         summary=Summary(headline=headline, metrics=metrics),
         layers=layers,
+        charts=[c for c in drawn if c is not None],
         stats={
             "effort": common.effort([c.first_read for c in cuts]),
             "primary_polarization": primary,

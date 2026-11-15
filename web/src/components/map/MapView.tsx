@@ -18,7 +18,7 @@ import { activeGroup, layerMode, mapLayersFor } from "@/lib/layers";
 import { activeResult, useApp } from "@/lib/store";
 import { useApiMode } from "@/lib/useActions";
 import type { BBox } from "@/lib/types";
-import { addAnchors, destroyMap } from "./anchors";
+import { addAnchors, colourWater, destroyMap } from "./anchors";
 import { LayersCard } from "./LayersCard";
 import { SpotCard, type SpotState } from "./SpotCard";
 import { SwipeHandle } from "./SwipeHandle";
@@ -111,12 +111,39 @@ export default function MapView() {
     instance.once("style.load", () => {
       if (!alive) return;
       instance.setProjection({ type: "globe" });
+      colourWater(instance);
       addAnchors(instance);
       addAreaLayers(instance);
       setMap(instance);
     });
     instance.once("idle", () => {
       if (alive) setTilesReady(true);
+    });
+
+    // Until someone touches the map, the planet turns slowly: the opening view is the whole Earth, and a
+    // still globe hides most of it. Any touch, scroll, key or journey to a place ends the turning for good.
+    let turning = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let turnFrame = 0;
+    let lastTurn = 0;
+    const stopTurning = () => {
+      turning = false;
+      cancelAnimationFrame(turnFrame);
+    };
+    const turn = (now: number) => {
+      if (!turning || !alive) return;
+      // A journey the app started (to a searched place or an example) is under way: leave the camera to it.
+      if (instance.isMoving() || instance.getZoom() > 3) return stopTurning();
+      const elapsed = lastTurn === 0 ? 0 : Math.min(64, now - lastTurn);
+      lastTurn = now;
+      const centre = instance.getCenter();
+      instance.jumpTo({ center: [centre.lng - elapsed * 0.0025, centre.lat] }); // one turn in about 2.5 minutes
+      turnFrame = requestAnimationFrame(turn);
+    };
+    for (const type of ["pointerdown", "wheel", "touchstart", "keydown"] as const) {
+      container.addEventListener(type, stopTurning, { once: true, passive: true });
+    }
+    instance.once("idle", () => {
+      if (turning && alive) turnFrame = requestAnimationFrame(turn);
     });
 
     // MapLibre only draws inside animation frames, and browsers slow or stop those for a page that is
@@ -128,6 +155,7 @@ export default function MapView() {
 
     return () => {
       alive = false;
+      stopTurning();
       keepFolded.disconnect();
       clearInterval(paintWhileHidden);
       setMap(null);

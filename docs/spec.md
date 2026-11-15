@@ -160,6 +160,12 @@ Serves PNG, GeoTIFF, CSV and JSON produced by a workflow.
     {"id": "hh_mean", "label": "HH mean", "unit": "dB", "track": 77,
      "points": [ {"date": "2026-06-19", "value": -12.9, "spread": 0.4, "tier": "provisional"} ]}
   ],
+  "charts": [
+    {"id": "change_distribution", "kind": "histogram", "title": "How much each part of the area changed",
+     "description": "One or two sentences on how to read it.",
+     "data": {"unit": "dB", "edges": [-6.0, -5.75], "area_km2": [0.2], "band": [-2.9, 2.9],
+              "band_label": "no clear change", "low_label": "darker", "high_label": "brighter"}}
+  ],
   "stats": {},
   "uncertainty": {
     "method": "Per-pixel log-ratio after 9x9 multilook, normalised by the median shift of stable reference pixels.",

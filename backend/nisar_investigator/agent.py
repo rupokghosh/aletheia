@@ -27,7 +27,9 @@ from .schemas import (
 )
 
 MAX_TURNS = 14
-MAX_REPORT_ATTEMPTS = 4
+# A report the figure check sends back costs a whole model call (50 to 100 s on a local model). After one
+# revision the third attempt is kept and flagged as not fully traceable, instead of asking again.
+MAX_REPORT_ATTEMPTS = 3
 MAX_ANSWER_WORDS = 60
 
 SYSTEM_PROMPT = """\
@@ -39,8 +41,8 @@ what matters most is that every statement is traceable and that the limits of th
 
 How the tool works. You cannot see imagery or raw data. Deterministic analysis code does the measuring, and \
 you reach it through tools that all operate on the user's selected area:
-- check_coverage: what NISAR has here (dates, tracks, calibration tier, gaps). Call it first, because every \
-later choice depends on which dates actually exist.
+- check_coverage: what NISAR has here (dates, tracks, calibration tier, gaps). It has already been run for \
+you: its result is in the first message, with the id "coverage". Call it again only if you need it refreshed.
 - run_change: backscatter change between two dates. Both dates must come from the same stack (same track \
 and frame), otherwise the pixel grids and viewing geometry differ.
 - run_timeseries: mean backscatter for the area on every available date, per track and polarization.
@@ -49,7 +51,8 @@ interferogram pairs, where they exist.
 - get_context: independent evidence that is not radar (earthquake catalogue, river gauges).
 - submit_report: the final answer. Call it exactly once, when you have what you need.
 
-Choosing an analysis. Pick the smallest set of tool calls that answers the question. "What changed between \
+Choosing an analysis. Pick the smallest set of tool calls that answers the question, and ask for the \
+analysis and any context evidence together in one turn: every extra turn makes the person wait. "What changed between \
 A and B" is run_change. "How did this behave over the season" or "when did it happen" is run_timeseries, \
 often followed by run_change across the largest step. "Did the ground move" is run_motion. Prefer validated \
 or provisional dates over beta ones, which are uncalibrated. When the question names dates, use exactly those \
@@ -438,7 +441,9 @@ class _Session:
             data = context.river_gauges(self.req.bbox, a["start"], a["end"], dates or None)
             detail = ", ".join(g["station_name"].title() for g in data.get("gauges", [])) if data.get("available") else data.get("reason", "")
         data = {"id": f"ctx_{a['kind']}", **data}
-        return data, data, detail
+        # The day-by-day levels are for the chart; the model reads the levels on the radar dates and the extremes.
+        digest = data | {"gauges": [{k: v for k, v in g.items() if k != "daily"} for g in data["gauges"]]} if data.get("gauges") else data
+        return digest, data, detail
 
     def submit_report(self, a: dict):
         """Returns (ok, message_for_model)."""
@@ -747,8 +752,32 @@ def _check_input(name: str, data: dict) -> str | None:
 def investigate(req: InvestigateRequest) -> Iterator[dict]:
     """Run one investigation, yielding events: step, tool_call, tool_result, done, error."""
     session = _Session(req)
+    prompt = _user_prompt(req)
+
+    # Coverage is looked up before the model is asked anything. Every plan needs it, and having a model
+    # ask for it costs one whole model call (measured at 37 s on a local model) for a foregone decision.
+    title = _STEP_TITLES["check_coverage"]
+    yield _event("step", title=title, status="running")
+    yield _event("tool_call", name="check_coverage", input={})
     try:
-        backend = _make_backend(_user_prompt(req))
+        digest, full, detail = session.check_coverage({})
+    except Exception as exc:  # noqa: BLE001 - the model can still try the tool itself
+        message = f"{type(exc).__name__}: {exc}"[:300]
+        session.steps.append(InvestigationStep(title=title, detail=f"Failed: {message}"))
+        yield _event("step", title=title, status="failed", detail=message)
+    else:
+        session.digests[digest["id"]] = digest
+        session.results[digest["id"]] = full
+        session.steps.append(InvestigationStep(title=title, detail=detail, result_ref=digest["id"]))
+        yield _event("tool_result", name="check_coverage", result_ref=digest["id"], result=full)
+        yield _event("step", title=title, status="done", detail=detail, result_ref=digest["id"])
+        prompt += (
+            "\n\nWhat NISAR has for this area has already been looked up. This is the result of check_coverage "
+            f"(id \"coverage\"):\n{json.dumps(digest, default=str)}"
+        )
+
+    try:
+        backend = _make_backend(prompt)
     except ModelError as exc:
         yield _event("error", message=str(exc))
         return

@@ -199,6 +199,51 @@ export interface Download {
 export type WorkflowKind = "change" | "timeseries" | "motion";
 export type WorkflowStatus = "ok" | "unsupported" | "error";
 
+/** Area per step of a measured quantity. `band` is the span that cannot be told from no change. */
+export interface HistogramData {
+  unit: string;
+  edges: number[];
+  area_km2: number[];
+  band: [number, number];
+  band_label: string;
+  low_label: string;
+  high_label: string;
+}
+
+/** How the analysed area divides into classes. */
+export interface SharesData {
+  unit: string;
+  total: number;
+  parts: Array<{ key: string; label: string; value: number }>;
+}
+
+/** The typical value across the area along one compass direction, with the spread across it. */
+export interface ProfileData {
+  unit: string;
+  x_unit: string;
+  x: Array<number | null>;
+  y: Array<number | null>;
+  low: Array<number | null>;
+  high: Array<number | null>;
+  band: [number, number];
+  band_label: string;
+  start: string;
+  end: string;
+}
+
+interface ChartBase {
+  id: string;
+  title: string;
+  /** one or two sentences on how to read it */
+  description: string | null;
+}
+
+/** Numbers for one small chart shown with a result, computed by the API from the result's own arrays. */
+export type Chart =
+  | (ChartBase & { kind: "histogram"; data: HistogramData })
+  | (ChartBase & { kind: "shares"; data: SharesData })
+  | (ChartBase & { kind: "profile"; data: ProfileData });
+
 export interface WorkflowResult {
   id: string;
   workflow: WorkflowKind;
@@ -207,6 +252,8 @@ export interface WorkflowResult {
   summary: Summary;
   layers: Layer[];
   series: Series[];
+  /** absent in results stored by older builds */
+  charts?: Chart[];
   stats: JsonObject;
   uncertainty: Uncertainty | null;
   caveats: Caveat[];

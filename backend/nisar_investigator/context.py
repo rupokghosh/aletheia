@@ -147,6 +147,7 @@ def _canada_gauges(bbox: BBox, start: str, end: str, dates: list[str], pad_deg: 
                 "level_on_dates": {d: daily[d] for d in dates if d in daily},
                 "period_max": {"date": peak_day, "level": daily[peak_day]},
                 "period_min": {"date": low_day, "level": daily[low_day]},
+                "daily": [[day, level] for day, level in daily.items()],  # for the chart
                 "url": f"https://wateroffice.ec.gc.ca/report/real_time_e.html?stn={sid}",
             }
         )
@@ -198,6 +199,7 @@ def _usa_gauges(bbox: BBox, start: str, end: str, dates: list[str], pad_deg: flo
                 "level_on_dates": {d: daily[d] for d in dates if d in daily},
                 "period_max": {"date": peak_day, "level": daily[peak_day]},
                 "period_min": {"date": low_day, "level": daily[low_day]},
+                "daily": [[day, level] for day, level in sorted(daily.items())],  # for the chart
                 "url": f"https://waterdata.usgs.gov/monitoring-location/{sid}/",
             }
         )

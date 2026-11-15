@@ -49,7 +49,7 @@ from datetime import date
 
 import numpy as np
 
-from .. import catalog, gunw, ops, provenance, render
+from .. import catalog, charts, gunw, ops, provenance, render
 from ..remote import RemoteAccessError
 from ..schemas import (
     BBox,
@@ -1283,6 +1283,14 @@ def run_motion(
                                         "reference_date": pair.reference_date, "track": pair.track}},
         summary=Summary(headline=headline, metrics=metrics),
         layers=layers,
+        charts=[
+            c
+            for c in (
+                charts.motion_profile(res.los_cm, cut.x, cut.y, decision.noise_cm),
+                charts.motion_distribution(res.los_cm, decision.noise_cm, limit, cut.pixel_area_km2),
+            )
+            if c is not None
+        ],
         stats=stats,
         uncertainty=uncertainty,
         caveats=caveats,

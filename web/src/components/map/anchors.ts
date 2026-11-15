@@ -15,6 +15,24 @@ export function addAnchors(map: MapLibreMap): void {
   }
 }
 
+/**
+ * The base map draws water in pale grey. NISAR does not image the open ocean, so that grey is what
+ * most of the globe would show; a deep blue reads as sea and sits next to the radar picture, whose
+ * own water is dark, without a seam.
+ */
+const SEA = "#17365c";
+const SEA_LABEL = "#c9d6ee";
+
+export function colourWater(map: MapLibreMap): void {
+  if (map.getLayer("water")) map.setPaintProperty("water", "fill-color", SEA);
+  if (map.getLayer("waterway")) map.setPaintProperty("waterway", "line-color", SEA);
+  for (const id of ["water_name_point_label", "water_name_line_label", "waterway_line_label"]) {
+    if (!map.getLayer(id)) continue;
+    map.setPaintProperty(id, "text-color", SEA_LABEL);
+    map.setPaintProperty(id, "text-halo-color", "rgba(12, 30, 54, 0.75)");
+  }
+}
+
 const removed = new WeakSet<MapLibreMap>();
 
 /** Removes the map and remembers it, so effect clean-ups that run afterwards can skip it. */

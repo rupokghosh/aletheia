@@ -116,6 +116,16 @@ class Series(BaseModel):
     points: list[SeriesPoint]
 
 
+class Chart(BaseModel):
+    """Numbers for one small chart shown with a result. The kinds and their data are described in charts.py."""
+
+    id: str
+    kind: Literal["histogram", "shares", "profile"]
+    title: str
+    description: str | None = None  # one or two sentences on how to read it
+    data: dict[str, Any] = Field(default_factory=dict)
+
+
 class Sensitivity(BaseModel):
     parameter: str
     value: float | str
@@ -177,6 +187,7 @@ class WorkflowResult(BaseModel):
     summary: Summary
     layers: list[Layer] = Field(default_factory=list)
     series: list[Series] = Field(default_factory=list)
+    charts: list[Chart] = Field(default_factory=list)
     stats: dict[str, Any] = Field(default_factory=dict)
     uncertainty: Uncertainty | None = None
     caveats: list[Caveat] = Field(default_factory=list)

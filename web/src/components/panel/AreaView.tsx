@@ -65,8 +65,8 @@ function AreaLine({ bbox }: { bbox: BBox }) {
       {area > LARGE_AREA_KM2 ? (
         <div className="mt-3">
           <Notice tone="warn">
-            This is a large area. Above {LARGE_AREA_KM2} km² an analysis takes longer, because more of each file is
-            read. A smaller rectangle around what you care about is faster and sharper.
+            This is a large area: above {LARGE_AREA_KM2} km², more of each file has to be read. A smaller rectangle
+            around what you care about gives a sharper answer.
           </Notice>
         </div>
       ) : null}
@@ -178,7 +178,7 @@ export function AreaView({ bbox }: { bbox: BBox }) {
                     {!ready ? (
                       <Notice>Dates can be chosen once the search above has finished.</Notice>
                     ) : run.status === "running" ? (
-                      <RunProgress description={run.description} startedAt={run.startedAt} demo={mode.demo} onCancel={actions.cancelRun} />
+                      <RunProgress description={run.description} demo={mode.demo} onCancel={actions.cancelRun} />
                     ) : (
                       <>
                         {run.status === "error" && run.error ? (

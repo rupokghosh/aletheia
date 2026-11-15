@@ -10,6 +10,7 @@ import { plural, prettyUnits } from "@/lib/format";
 import { useApp, type InvestigationState, type StepResult, type TimelineStep } from "@/lib/store";
 import { useActions } from "@/lib/useActions";
 import type { JsonObject } from "@/lib/types";
+import { Evidence } from "./Evidence";
 import { ReportView } from "./ReportView";
 
 /** What a step found, with the way to open it. */
@@ -153,7 +154,17 @@ export function InvestigationView() {
 
       {final?.report ? (
         <>
-          <ReportView report={final.report} refs={refs} model={final.model} />
+          <ReportView
+            report={final.report}
+            refs={refs}
+            model={final.model}
+            evidence={
+              <Evidence
+                results={state.results.filter((stored) => refs.includes(stored.result.id)).map((stored) => stored.result)}
+                others={investigation.others}
+              />
+            }
+          />
           <details className="mt-6 border-t border-line pt-3">
             <summary className="w-max text-[15px] text-ink underline underline-offset-2">
               How this was worked out, in {plural(investigation.steps.length, "step")}
@@ -170,11 +181,10 @@ export function InvestigationView() {
               <RunProgress
                 description={
                   investigation.steps.length === 0
-                    ? "The question has been sent. Steps appear here as the server reports them."
-                    : "Each step is reported when it starts and again when it ends."
+                    ? "The question has been sent. Steps appear here as they are taken."
+                    : "Each step appears above as it starts and again when it ends."
                 }
-                note="A full investigation usually takes one to four minutes."
-                startedAt={investigation.startedAt}
+                note="The measuring is done by analysis code; a language model chooses the steps and writes the report from the results."
                 demo={source === "demo"}
                 onCancel={actions.stopInvestigation}
               />

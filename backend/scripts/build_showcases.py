@@ -130,6 +130,58 @@ def _export(showcase: dict, investigation: dict, artifacts_dir: Path) -> dict:
     }
 
 
+def _add_charts() -> None:
+    """Give exported showcases the chart data newer builds compute, without calling the language model.
+
+    Each analysis is run again from its stored request (its windows are cached, so this takes seconds) and
+    only the chart data is copied over, and only if the new run states the same headline as the stored one.
+    River gauges are asked again for their day-by-day levels, and kept only if the levels on the radar dates
+    still match what the report was written from.
+    """
+    from datetime import date, timedelta
+
+    from nisar_investigator import context
+    from nisar_investigator.schemas import ChangeRequest, MotionRequest, TimeSeriesRequest
+    from nisar_investigator.workflows.change import run_change
+    from nisar_investigator.workflows.motion import run_motion
+    from nisar_investigator.workflows.timeseries import run_timeseries
+
+    runners = {"change": (ChangeRequest, run_change), "motion": (MotionRequest, run_motion), "timeseries": (TimeSeriesRequest, run_timeseries)}
+    for showcase in SHOWCASES:
+        path = OUT / showcase["id"] / "investigation.json"
+        if not path.exists():
+            continue
+        investigation = json.loads(path.read_text())
+        for key, stored in investigation["results"].items():
+            if not isinstance(stored, dict):
+                continue
+            if stored.get("workflow") in runners and stored.get("status") == "ok":
+                model, run = runners[stored["workflow"]]
+                request = {k: v for k, v in stored["request"].items() if k in model.model_fields}
+                again = run(model(**request)).model_dump(mode="json")
+                same = again["summary"]["headline"] == stored["summary"]["headline"]
+                if same:
+                    stored["charts"] = again["charts"]
+                print(f"  {showcase['id']} {key}: {'charts ' + str([c['id'] for c in again['charts']]) if same else 'HEADLINE DIFFERS, left alone'}", flush=True)
+                if not same:
+                    print(f"     stored: {stored['summary']['headline']}\n     now:    {again['summary']['headline']}", flush=True)
+            elif key == "ctx_river_gauges" and stored.get("available"):
+                days = sorted({d for g in stored["gauges"] for d in g.get("level_on_dates", {})})
+                if not days:
+                    continue
+                start = (date.fromisoformat(days[0]) - timedelta(days=10)).isoformat()
+                end = min(date.fromisoformat(days[-1]) + timedelta(days=10), date.today()).isoformat()
+                fresh = context.river_gauges(tuple(investigation["bbox"]), start, end, days)
+                by_id = {g["station_id"]: g for g in fresh.get("gauges", [])}
+                for gauge in stored["gauges"]:
+                    new = by_id.get(gauge["station_id"])
+                    same = bool(new) and new["level_on_dates"] == gauge["level_on_dates"]
+                    if same:
+                        gauge["daily"] = new["daily"]
+                    print(f"  {showcase['id']} gauge {gauge['station_id']}: {str(len(new['daily'])) + ' daily levels' if same else 'LEVELS DIFFER OR GAUGE MISSING, left alone'}", flush=True)
+        path.write_text(json.dumps(investigation, indent=1))
+
+
 def main() -> None:
     from nisar_investigator import agent, config
     from nisar_investigator.schemas import InvestigateRequest
@@ -138,9 +190,13 @@ def main() -> None:
     p.add_argument("--only")
     p.add_argument("--skip-existing", action="store_true")
     p.add_argument("--refresh", action="store_true", help="re-apply titles and plain layer names to exported showcases, without running anything")
+    p.add_argument("--charts", action="store_true", help="add chart data to exported showcases by re-running their analyses (no language model)")
     a = p.parse_args()
 
     OUT.mkdir(parents=True, exist_ok=True)
+    if a.charts:
+        _add_charts()
+        return
     if a.refresh:
         from nisar_investigator import plain
 
